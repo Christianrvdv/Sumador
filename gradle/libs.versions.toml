@@ -25,6 +25,7 @@ firebase-bom = "33.7.0"
 work = "2.10.0"
 hilt-work = "1.2.0"
 kotlinx-coroutines = "1.7.3"
+datastore = "1.1.1"
 
 [libraries]
 # AndroidX y Compose
@@ -52,6 +53,7 @@ firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinx-coroutines" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
 
 # Hilt Work
 hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "hilt-work" }
