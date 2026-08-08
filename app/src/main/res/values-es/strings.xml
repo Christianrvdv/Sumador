@@ -23,4 +23,6 @@
     <string name="error_saving_settings">Error al guardar configuración</string>
     <string name="error_reading_state">Error al leer cantidades guardadas</string>
     <string name="error_saving_state">Error al guardar cantidades</string>
+    <string name="auto_save_label">Guardar cantidades automáticamente</string>
+    <string name="confirm_clear_label">Confirmar antes de limpiar</string>
 </resources>

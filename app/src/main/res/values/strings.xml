@@ -23,4 +23,6 @@
     <string name="error_saving_settings">Error saving settings</string>
     <string name="error_reading_state">Error reading saved amounts</string>
     <string name="error_saving_state">Error saving amounts</string>
+    <string name="auto_save_label">Auto-save amounts</string>
+    <string name="confirm_clear_label">Confirm before clearing</string>
 </resources>

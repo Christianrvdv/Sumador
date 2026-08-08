@@ -17,7 +17,9 @@ fun SettingsDialog(
     onDismiss: () -> Unit,
     onThemeChange: (ThemeOption) -> Unit,
     onCurrencyChange: (CurrencySymbol) -> Unit,
-    onSortChange: (Boolean) -> Unit
+    onSortChange: (Boolean) -> Unit,
+    onAutoSaveChange: (Boolean) -> Unit,
+    onConfirmClearChange: (Boolean) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -110,6 +112,42 @@ fun SettingsDialog(
                         onClick = { onSortChange(false) }
                     )
                     Text(stringResource(R.string.sort_descending), style = MaterialTheme.typography.bodyMedium)
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // Guardado automático
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.auto_save_label),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Switch(
+                        checked = settingsState.autoSave,
+                        onCheckedChange = onAutoSaveChange
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // Confirmar antes de limpiar
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = stringResource(R.string.confirm_clear_label),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Switch(
+                        checked = settingsState.confirmClear,
+                        onCheckedChange = onConfirmClearChange
+                    )
                 }
             }
         },

@@ -19,10 +19,8 @@ private val Context.sumadorDataStore by preferencesDataStore(name = "sumador_sta
 
 class SumadorViewModel(private val context: Context) : ViewModel() {
 
-    // Claves para DataStore: una por denominación
     private fun getKeyForDenom(denom: Int) = stringPreferencesKey("cantidad_$denom")
 
-    // Mapa mutable interno
     private val _cantidades = mutableStateMapOf<Int, String>().apply {
         denominaciones.forEach { this[it] = "" }
     }
@@ -32,8 +30,11 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
     )
     val state: StateFlow<SumadorState> = _state.asStateFlow()
 
+    // Bandera para controlar la persistencia
+    private var autoSaveEnabled = true
+
     init {
-        // Cargar estado guardado
+        // Cargar estado guardado (siempre al inicio, independientemente de autoSave)
         viewModelScope.launch {
             context.sumadorDataStore.data
                 .catch { exception ->
@@ -56,10 +57,22 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
         }
     }
 
+    /**
+     * Actualiza la bandera de auto-save desde el exterior (UI)
+     */
+    fun setAutoSave(enabled: Boolean) {
+        autoSaveEnabled = enabled
+    }
+
     fun updateCantidad(denominacion: Int, valor: String) {
         _cantidades[denominacion] = valor
         calcularTotal()
-        // Guardar en DataStore de forma asíncrona
+        if (autoSaveEnabled) {
+            guardarCantidad(denominacion, valor)
+        }
+    }
+
+    private fun guardarCantidad(denominacion: Int, valor: String) {
         viewModelScope.launch {
             try {
                 context.sumadorDataStore.edit { prefs ->
@@ -82,7 +95,12 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
     fun resetear() {
         denominaciones.forEach { _cantidades[it] = "" }
         calcularTotal()
-        // Guardar todas las claves vacías
+        if (autoSaveEnabled) {
+            guardarReset()
+        }
+    }
+
+    private fun guardarReset() {
         viewModelScope.launch {
             try {
                 context.sumadorDataStore.edit { prefs ->

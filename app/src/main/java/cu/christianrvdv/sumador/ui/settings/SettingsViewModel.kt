@@ -21,6 +21,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         val THEME = stringPreferencesKey("theme")
         val CURRENCY = stringPreferencesKey("currency")
         val SORT_ASC = booleanPreferencesKey("sort_asc")
+        val AUTO_SAVE = booleanPreferencesKey("auto_save")
+        val CONFIRM_CLEAR = booleanPreferencesKey("confirm_clear")
     }
 
     private val _state = MutableStateFlow(SettingsState())
@@ -31,7 +33,6 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             context.dataStore.data
                 .catch { exception ->
                     Log.e("SettingsViewModel", "Error reading settings", exception)
-                    // Emitir un estado por defecto en caso de error
                     emit(emptyPreferences())
                 }
                 .collect { prefs ->
@@ -41,10 +42,11 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                         val currencyStr = prefs[Keys.CURRENCY] ?: "PESO"
                         val currency = CurrencySymbol.valueOf(currencyStr)
                         val sortAsc = prefs[Keys.SORT_ASC] ?: true
-                        _state.value = SettingsState(theme, currency, sortAsc)
+                        val autoSave = prefs[Keys.AUTO_SAVE] ?: true
+                        val confirmClear = prefs[Keys.CONFIRM_CLEAR] ?: true
+                        _state.value = SettingsState(theme, currency, sortAsc, autoSave, confirmClear)
                     } catch (e: Exception) {
                         Log.e("SettingsViewModel", "Error parsing settings", e)
-                        // Mantener el estado por defecto
                     }
                 }
         }
@@ -77,6 +79,26 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             }
         } catch (e: Exception) {
             Log.e("SettingsViewModel", "Error saving sort order", e)
+        }
+    }
+
+    suspend fun updateAutoSave(enabled: Boolean) {
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.AUTO_SAVE] = enabled
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving autoSave", e)
+        }
+    }
+
+    suspend fun updateConfirmClear(enabled: Boolean) {
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.CONFIRM_CLEAR] = enabled
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving confirmClear", e)
         }
     }
 

@@ -45,6 +45,11 @@ fun SumadorScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
 
+    // Actualizar la bandera de autoSave en el ViewModel cuando cambie en settings
+    LaunchedEffect(settingsState.autoSave) {
+        viewModel.setAutoSave(settingsState.autoSave)
+    }
+
     // Ordenar denominaciones según configuración
     val denominacionesOrdenadas = remember(settingsState.sortAscending) {
         if (settingsState.sortAscending) {
@@ -78,7 +83,6 @@ fun SumadorScreen(
         }
     }
 
-    // Formateo del total con separadores de miles
     val totalFormateado = remember(state.total) {
         NumberFormat.getIntegerInstance().format(state.total)
     }
@@ -132,9 +136,15 @@ fun SumadorScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Botón de limpiar con confirmación
+            // Botón de limpiar con confirmación condicional
             FilledTonalButton(
-                onClick = { showResetDialog = true },
+                onClick = {
+                    if (settingsState.confirmClear) {
+                        showResetDialog = true
+                    } else {
+                        viewModel.resetear()
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 16.dp),
@@ -149,7 +159,7 @@ fun SumadorScreen(
                 Text(stringResource(R.string.clear_all), style = MaterialTheme.typography.titleMedium)
             }
 
-            // Tarjeta del total con animación de pulso
+            // Tarjeta del total
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -183,7 +193,7 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogo de confirmación para reiniciar
+    // Diálogo de confirmación para reiniciar (solo se muestra si confirmClear es true y se dispara)
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -225,6 +235,16 @@ fun SumadorScreen(
             onSortChange = { ascending ->
                 coroutineScope.launch {
                     settingsViewModel.updateSortOrder(ascending)
+                }
+            },
+            onAutoSaveChange = { enabled ->
+                coroutineScope.launch {
+                    settingsViewModel.updateAutoSave(enabled)
+                }
+            },
+            onConfirmClearChange = { enabled ->
+                coroutineScope.launch {
+                    settingsViewModel.updateConfirmClear(enabled)
                 }
             }
         )
