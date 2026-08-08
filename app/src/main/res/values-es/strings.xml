@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">Sumador de Efectivo</string>
+    <string name="settings">Configuraciones</string>
+    <string name="total">TOTAL</string>
+    <string name="clear_all">Limpiar todo</string>
+    <string name="clear_confirmation_title">Reiniciar sumador</string>
+    <string name="clear_confirmation_text">¿Estás seguro de que quieres borrar todas las cantidades?</string>
+    <string name="clear_confirm">Sí, limpiar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="ok">Aceptar</string>
+    <string name="settings_title">Configuraciones</string>
+    <string name="theme_label">Tema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Oscuro</string>
+    <string name="theme_system">Automático (sistema)</string>
+    <string name="currency_label">Símbolo de moneda</string>
+    <string name="sort_label">Orden de billetes</string>
+    <string name="sort_ascending">Ascendente (5,10,20…)</string>
+    <string name="sort_descending">Descendente (5000,2000,1000…)</string>
+    <string name="bill_of">Billetes de</string>
+    <string name="placeholder_zero">0</string>
+    <string name="error_reading_settings">Error al leer configuración</string>
+    <string name="error_saving_settings">Error al guardar configuración</string>
+    <string name="error_reading_state">Error al leer cantidades guardadas</string>
+    <string name="error_saving_state">Error al guardar cantidades</string>
+</resources>

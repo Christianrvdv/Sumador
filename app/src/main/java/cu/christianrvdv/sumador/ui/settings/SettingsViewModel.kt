@@ -1,6 +1,7 @@
 package cu.christianrvdv.sumador.ui.settings
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
@@ -9,7 +10,7 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
@@ -28,35 +29,54 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
     init {
         viewModelScope.launch {
             context.dataStore.data
-                .map { prefs ->
-                    val themeStr = prefs[Keys.THEME] ?: "SYSTEM"
-                    val theme = ThemeOption.valueOf(themeStr)
-                    val currencyStr = prefs[Keys.CURRENCY] ?: "PESO"
-                    val currency = CurrencySymbol.valueOf(currencyStr)
-                    val sortAsc = prefs[Keys.SORT_ASC] ?: true
-                    SettingsState(theme, currency, sortAsc)
+                .catch { exception ->
+                    Log.e("SettingsViewModel", "Error reading settings", exception)
+                    // Emitir un estado por defecto en caso de error
+                    emit(emptyPreferences())
                 }
-                .collect { newState ->
-                    _state.value = newState
+                .collect { prefs ->
+                    try {
+                        val themeStr = prefs[Keys.THEME] ?: "SYSTEM"
+                        val theme = ThemeOption.valueOf(themeStr)
+                        val currencyStr = prefs[Keys.CURRENCY] ?: "PESO"
+                        val currency = CurrencySymbol.valueOf(currencyStr)
+                        val sortAsc = prefs[Keys.SORT_ASC] ?: true
+                        _state.value = SettingsState(theme, currency, sortAsc)
+                    } catch (e: Exception) {
+                        Log.e("SettingsViewModel", "Error parsing settings", e)
+                        // Mantener el estado por defecto
+                    }
                 }
         }
     }
 
     suspend fun updateTheme(theme: ThemeOption) {
-        context.dataStore.edit { prefs ->
-            prefs[Keys.THEME] = theme.name
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.THEME] = theme.name
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving theme", e)
         }
     }
 
     suspend fun updateCurrency(currency: CurrencySymbol) {
-        context.dataStore.edit { prefs ->
-            prefs[Keys.CURRENCY] = currency.name
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.CURRENCY] = currency.name
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving currency", e)
         }
     }
 
     suspend fun updateSortOrder(ascending: Boolean) {
-        context.dataStore.edit { prefs ->
-            prefs[Keys.SORT_ASC] = ascending
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.SORT_ASC] = ascending
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving sort order", e)
         }
     }
 

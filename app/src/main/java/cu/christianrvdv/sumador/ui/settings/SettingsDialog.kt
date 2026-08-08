@@ -1,15 +1,15 @@
-// SettingsDialog.kt
 package cu.christianrvdv.sumador.ui.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
+import cu.christianrvdv.sumador.R
 
 @Composable
 fun SettingsDialog(
@@ -21,7 +21,7 @@ fun SettingsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Configuraciones") },
+        title = { Text(stringResource(R.string.settings_title)) },
         text = {
             Column(
                 modifier = Modifier
@@ -32,7 +32,7 @@ fun SettingsDialog(
             ) {
                 // Tema
                 Text(
-                    text = "Tema",
+                    text = stringResource(R.string.theme_label),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -48,9 +48,9 @@ fun SettingsDialog(
                         )
                         Text(
                             text = when (option) {
-                                ThemeOption.LIGHT -> "Claro"
-                                ThemeOption.DARK -> "Oscuro"
-                                ThemeOption.SYSTEM -> "Automático (sistema)"
+                                ThemeOption.LIGHT -> stringResource(R.string.theme_light)
+                                ThemeOption.DARK -> stringResource(R.string.theme_dark)
+                                ThemeOption.SYSTEM -> stringResource(R.string.theme_system)
                             },
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -61,7 +61,7 @@ fun SettingsDialog(
 
                 // Símbolo de moneda
                 Text(
-                    text = "Símbolo de moneda",
+                    text = stringResource(R.string.currency_label),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -86,7 +86,7 @@ fun SettingsDialog(
 
                 // Orden de billetes
                 Text(
-                    text = "Orden de billetes",
+                    text = stringResource(R.string.sort_label),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -99,7 +99,7 @@ fun SettingsDialog(
                         selected = settingsState.sortAscending,
                         onClick = { onSortChange(true) }
                     )
-                    Text("Ascendente (5,10,20...)", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.sort_ascending), style = MaterialTheme.typography.bodyMedium)
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -109,13 +109,13 @@ fun SettingsDialog(
                         selected = !settingsState.sortAscending,
                         onClick = { onSortChange(false) }
                     )
-                    Text("Descendente (5000,2000,1000...)", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.sort_descending), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Aceptar")
+                Text(stringResource(R.string.ok))
             }
         }
     )

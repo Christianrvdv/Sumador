@@ -16,11 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cu.christianrvdv.sumador.R
 import cu.christianrvdv.sumador.ui.settings.SettingsDialog
 import cu.christianrvdv.sumador.ui.settings.SettingsViewModel
 import kotlinx.coroutines.delay
@@ -31,7 +34,9 @@ import java.text.NumberFormat
 @Composable
 fun SumadorScreen(
     modifier: Modifier = Modifier,
-    viewModel: SumadorViewModel = viewModel(),
+    viewModel: SumadorViewModel = viewModel(
+        factory = SumadorViewModel.provideFactory(LocalContext.current)
+    ),
     settingsViewModel: SettingsViewModel
 ) {
     val state by viewModel.state.collectAsState()
@@ -82,12 +87,12 @@ fun SumadorScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Sumador de Efectivo") },
+                title = { Text(stringResource(R.string.app_name)) },
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Configuraciones"
+                            contentDescription = stringResource(R.string.settings)
                         )
                     }
                 },
@@ -107,8 +112,6 @@ fun SumadorScreen(
                 .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Filas de billetes con animación escalonada
-            // Dentro del forEachIndexed en la Column
             denominacionesOrdenadas.forEachIndexed { index, denom ->
                 AnimatedVisibility(
                     visible = rowVisibility[index].value,
@@ -141,9 +144,9 @@ fun SumadorScreen(
                     contentColor = MaterialTheme.colorScheme.onErrorContainer
                 )
             ) {
-                Icon(Icons.Default.Delete, contentDescription = "Limpiar")
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear_all))
                 Spacer(Modifier.width(10.dp))
-                Text("Limpiar todo", style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.clear_all), style = MaterialTheme.typography.titleMedium)
             }
 
             // Tarjeta del total con animación de pulso
@@ -164,7 +167,7 @@ fun SumadorScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "TOTAL",
+                        text = stringResource(R.string.total),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
                         letterSpacing = 3.sp
@@ -184,8 +187,8 @@ fun SumadorScreen(
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
-            title = { Text("Reiniciar sumador") },
-            text = { Text("¿Estás seguro de que quieres borrar todas las cantidades?") },
+            title = { Text(stringResource(R.string.clear_confirmation_title)) },
+            text = { Text(stringResource(R.string.clear_confirmation_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -193,12 +196,12 @@ fun SumadorScreen(
                         showResetDialog = false
                     }
                 ) {
-                    Text("Sí, limpiar")
+                    Text(stringResource(R.string.clear_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetDialog = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -251,14 +254,14 @@ fun BillInputRow(
         ) {
             Icon(
                 imageVector = Icons.Default.Money,
-                contentDescription = "Billete",
+                contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(28.dp)
             )
             Spacer(Modifier.width(12.dp))
 
             Text(
-                text = "Billetes de $denomination $currencySymbol",
+                text = "${stringResource(R.string.bill_of)} $denomination $currencySymbol",
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
@@ -267,7 +270,6 @@ fun BillInputRow(
             OutlinedTextField(
                 value = value,
                 onValueChange = { newText ->
-                    // Solo dígitos, máximo 5 caracteres
                     if (newText.all { it.isDigit() } && newText.length <= 5) {
                         onValueChange(newText)
                     }
@@ -275,7 +277,7 @@ fun BillInputRow(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
                 modifier = Modifier.width(110.dp),
-                placeholder = { Text("0") },
+                placeholder = { Text(stringResource(R.string.placeholder_zero)) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
