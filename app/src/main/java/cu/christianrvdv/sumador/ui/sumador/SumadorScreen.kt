@@ -1,7 +1,5 @@
-// SumadorScreen.kt
 package cu.christianrvdv.sumador.ui.sumador
 
-import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,7 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Money
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +25,8 @@ fun SumadorScreen(
     viewModel: SumadorViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    // Animación para el total (pequeño efecto de escala)
+
+    // Animación suave para el total
     val totalScale by animateFloatAsState(
         targetValue = 1f,
         animationSpec = spring(
@@ -48,7 +47,7 @@ fun SumadorScreen(
                 .padding(horizontal = 16.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Título con icono
+            // Título
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center,
@@ -68,7 +67,7 @@ fun SumadorScreen(
                 )
             }
 
-            // Lista de campos por denominación
+            // Campos para cada denominación
             denominaciones.forEach { denom ->
                 BillInputRow(
                     denomination = denom,
@@ -80,20 +79,24 @@ fun SumadorScreen(
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Botón calcular (opcional, pero mantiene la interacción manual)
+            // Botón "Limpiar todo"
             FilledTonalButton(
-                onClick = { viewModel.calcularTotal() },
+                onClick = { viewModel.resetear() },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 20.dp),
-                shape = RoundedCornerShape(16.dp)
+                    .padding(vertical = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer
+                )
             ) {
-                Icon(Icons.Default.Calculate, contentDescription = "Calcular")
+                Icon(Icons.Default.Delete, contentDescription = "Limpiar")
                 Spacer(Modifier.width(10.dp))
-                Text("Calcular total", style = MaterialTheme.typography.titleLarge)
+                Text("Limpiar todo", style = MaterialTheme.typography.titleLarge)
             }
 
-            // Tarjeta del resultado con animación
+            // Tarjeta de resultado
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -148,7 +151,6 @@ fun BillInputRow(
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Icono del billete
             Icon(
                 imageVector = Icons.Default.Money,
                 contentDescription = null,

@@ -1,4 +1,3 @@
-// Theme.kt
 package cu.christianrvdv.sumador.ui.theme
 
 import android.os.Build

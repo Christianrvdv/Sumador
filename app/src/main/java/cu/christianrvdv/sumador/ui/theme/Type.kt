@@ -1,4 +1,3 @@
-// Type.kt
 package cu.christianrvdv.sumador.ui.theme
 
 import androidx.compose.material3.Typography
