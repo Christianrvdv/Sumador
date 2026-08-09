@@ -23,7 +23,8 @@ fun SettingsDialog(
     onCurrencyChange: (CurrencySymbol) -> Unit,
     onSortChange: (Boolean) -> Unit,
     onAutoSaveChange: (Boolean) -> Unit,
-    onConfirmClearChange: (Boolean) -> Unit
+    onConfirmClearChange: (Boolean) -> Unit,
+    onLanguageChange: (LanguageOption) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -46,7 +47,7 @@ fun SettingsDialog(
                     .padding(vertical = 8.dp),
                 horizontalAlignment = Alignment.Start
             ) {
-                // Tema
+                // --- Tema ---
                 SettingsSectionHeader(
                     icon = Icons.Default.BrightnessMedium,
                     title = stringResource(R.string.theme_label)
@@ -57,7 +58,7 @@ fun SettingsDialog(
                         selected = settingsState.theme == option,
                         label = when (option) {
                             ThemeOption.LIGHT -> stringResource(R.string.theme_light)
-                            ThemeOption.DARK -> stringResource(R.string.theme_dark)
+                            ThemeOption.DARK  -> stringResource(R.string.theme_dark)
                             ThemeOption.SYSTEM -> stringResource(R.string.theme_system)
                         },
                         onClick = { onThemeChange(option) }
@@ -66,7 +67,7 @@ fun SettingsDialog(
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Moneda
+                // --- Moneda ---
                 SettingsSectionHeader(
                     icon = Icons.Default.AttachMoney,
                     title = stringResource(R.string.currency_label)
@@ -75,14 +76,38 @@ fun SettingsDialog(
                 CurrencySymbol.values().forEach { currency ->
                     SettingsRadioRow(
                         selected = settingsState.currencySymbol == currency,
-                        label = "${currency.symbol} (${currency.name})",
+                        label = when (currency) {
+                            CurrencySymbol.PESO -> stringResource(R.string.currency_peso)
+                            CurrencySymbol.USD  -> stringResource(R.string.currency_usd)
+                            CurrencySymbol.EURO -> stringResource(R.string.currency_euro)
+                        },
                         onClick = { onCurrencyChange(currency) }
                     )
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Orden de billetes
+                // --- Idioma ---
+                SettingsSectionHeader(
+                    icon = Icons.Default.Language,
+                    title = stringResource(R.string.language_label)
+                )
+                Spacer(Modifier.height(4.dp))
+                LanguageOption.values().forEach { option ->
+                    SettingsRadioRow(
+                        selected = settingsState.language == option,
+                        label = when (option) {
+                            LanguageOption.ENGLISH -> stringResource(R.string.language_english)
+                            LanguageOption.SPANISH -> stringResource(R.string.language_spanish)
+                            LanguageOption.SYSTEM  -> stringResource(R.string.language_system)
+                        },
+                        onClick = { onLanguageChange(option) }
+                    )
+                }
+
+                Divider(modifier = Modifier.padding(vertical = 12.dp))
+
+                // --- Orden de billetes ---
                 SettingsSectionHeader(
                     icon = Icons.Default.Sort,
                     title = stringResource(R.string.sort_label)
@@ -101,7 +126,7 @@ fun SettingsDialog(
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Guardado automático
+                // --- Guardado automático ---
                 SettingsSwitchRow(
                     label = stringResource(R.string.auto_save_label),
                     checked = settingsState.autoSave,
@@ -110,7 +135,7 @@ fun SettingsDialog(
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Confirmar limpiar
+                // --- Confirmar limpiar ---
                 SettingsSwitchRow(
                     label = stringResource(R.string.confirm_clear_label),
                     checked = settingsState.confirmClear,

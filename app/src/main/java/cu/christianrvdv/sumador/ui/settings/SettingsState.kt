@@ -12,10 +12,13 @@ enum class CurrencySymbol(val symbol: String) {
     EURO("€")
 }
 
+enum class LanguageOption { ENGLISH, SPANISH, SYSTEM }
+
 data class SettingsState(
     val theme: ThemeOption = ThemeOption.SYSTEM,
     val currencySymbol: CurrencySymbol = CurrencySymbol.PESO,
     val sortAscending: Boolean = true,
     val autoSave: Boolean = true,
-    val confirmClear: Boolean = true
+    val confirmClear: Boolean = true,
+    val language: LanguageOption = LanguageOption.SYSTEM
 )

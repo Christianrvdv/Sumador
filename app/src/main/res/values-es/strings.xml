@@ -27,4 +27,11 @@
     <string name="confirm_clear_label">Confirmar antes de limpiar</string>
     <string name="total_bills">Billetes: %d</string>
     <string name="total_bills_detail">%d billetes en total</string>
+    <string name="language_label">Idioma</string>
+    <string name="language_english">Inglés</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_system">Predeterminado del sistema</string>
+    <string name="currency_peso">Peso cubano ($)</string>
+    <string name="currency_usd">Dólar estadounidense (USD)</string>
+    <string name="currency_euro">Euro (€)</string>
 </resources>

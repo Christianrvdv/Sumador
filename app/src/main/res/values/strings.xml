@@ -27,4 +27,11 @@
     <string name="confirm_clear_label">Confirm before clearing</string>
     <string name="total_bills">Bills: %d</string>
     <string name="total_bills_detail">%d bills total</string>
+    <string name="language_label">Language</string>
+    <string name="language_english">English</string>
+    <string name="language_spanish">Spanish</string>
+    <string name="language_system">System default</string>
+    <string name="currency_peso">Cuban Peso ($)</string>
+    <string name="currency_usd">US Dollar (USD)</string>
+    <string name="currency_euro">Euro (€)</string>
 </resources>
