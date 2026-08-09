@@ -23,6 +23,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         val SORT_ASC = booleanPreferencesKey("sort_asc")
         val AUTO_SAVE = booleanPreferencesKey("auto_save")
         val CONFIRM_CLEAR = booleanPreferencesKey("confirm_clear")
+        val LANGUAGE = stringPreferencesKey("language")  // Nueva clave
     }
 
     private val _state = MutableStateFlow(SettingsState())
@@ -44,7 +45,16 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                         val sortAsc = prefs[Keys.SORT_ASC] ?: true
                         val autoSave = prefs[Keys.AUTO_SAVE] ?: true
                         val confirmClear = prefs[Keys.CONFIRM_CLEAR] ?: true
-                        _state.value = SettingsState(theme, currency, sortAsc, autoSave, confirmClear)
+                        val languageStr = prefs[Keys.LANGUAGE] ?: "SYSTEM"
+                        val language = LanguageOption.valueOf(languageStr)
+                        _state.value = SettingsState(
+                            theme = theme,
+                            currencySymbol = currency,
+                            sortAscending = sortAsc,
+                            autoSave = autoSave,
+                            confirmClear = confirmClear,
+                            language = language
+                        )
                     } catch (e: Exception) {
                         Log.e("SettingsViewModel", "Error parsing settings", e)
                     }
@@ -99,6 +109,17 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             }
         } catch (e: Exception) {
             Log.e("SettingsViewModel", "Error saving confirmClear", e)
+        }
+    }
+
+    // Nuevo método para actualizar el idioma
+    suspend fun updateLanguage(language: LanguageOption) {
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.LANGUAGE] = language.name
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving language", e)
         }
     }
 

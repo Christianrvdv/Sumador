@@ -289,6 +289,9 @@ fun SumadorScreen(
             },
             onConfirmClearChange = { enabled ->
                 coroutineScope.launch { settingsViewModel.updateConfirmClear(enabled) }
+            },
+            onLanguageChange = { language ->
+                coroutineScope.launch { settingsViewModel.updateLanguage(language) }
             }
         )
     }
