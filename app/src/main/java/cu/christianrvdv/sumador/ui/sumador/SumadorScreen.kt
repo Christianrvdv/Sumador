@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import cu.christianrvdv.sumador.R
 import cu.christianrvdv.sumador.ui.settings.SettingsDialog
 import cu.christianrvdv.sumador.ui.settings.SettingsViewModel
+import cu.christianrvdv.sumador.ui.settings.CurrencySymbol
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -53,12 +53,22 @@ fun SumadorScreen(
         viewModel.setAutoSave(settingsState.autoSave)
     }
 
-    // Ordenar denominaciones
-    val denominacionesOrdenadas = remember(settingsState.sortAscending) {
-        if (settingsState.sortAscending) denominaciones.sorted() else denominaciones.sortedDescending()
+    // Notificar al ViewModel cuando cambie la moneda para cargar las cantidades correspondientes
+    LaunchedEffect(settingsState.currencySymbol) {
+        viewModel.setCurrency(settingsState.currencySymbol)
     }
 
-    // Animación del total (escala + color)
+    // Obtener denominaciones según la moneda actual
+    val denominacionesActuales = remember(settingsState.currencySymbol) {
+        getDenominations(settingsState.currencySymbol)
+    }
+
+    // Ordenar denominaciones según preferencia
+    val denominacionesOrdenadas = remember(settingsState.sortAscending, settingsState.currencySymbol) {
+        if (settingsState.sortAscending) denominacionesActuales.sorted() else denominacionesActuales.sortedDescending()
+    }
+
+    // Animación del total (escala + color) con reinicio automático
     var pulse by remember { mutableStateOf(false) }
     val totalScale by animateFloatAsState(
         targetValue = if (pulse) 1.05f else 1f,
@@ -73,14 +83,20 @@ fun SumadorScreen(
         animationSpec = tween(300),
         label = "total_color"
     )
+    // Cuando el total cambia, activamos el pulso y lo desactivamos tras un breve retraso
     LaunchedEffect(state.total) {
         pulse = true
+        delay(300) // duración de la animación
+        pulse = false
     }
 
-    // Visibilidad escalonada de filas
-    val rowVisibility = remember { denominacionesOrdenadas.map { mutableStateOf(false) } }
-    denominacionesOrdenadas.forEachIndexed { index, _ ->
-        LaunchedEffect(index) {
+    // Visibilidad escalonada de filas (se reinicia al cambiar la lista de denominaciones)
+    val rowVisibility = remember(denominacionesOrdenadas) {
+        denominacionesOrdenadas.map { mutableStateOf(false) }
+    }
+    // Al cambiar la lista, reiniciamos las visibilidades
+    LaunchedEffect(denominacionesOrdenadas) {
+        denominacionesOrdenadas.forEachIndexed { index, _ ->
             delay(index * 60L)
             rowVisibility[index].value = true
         }

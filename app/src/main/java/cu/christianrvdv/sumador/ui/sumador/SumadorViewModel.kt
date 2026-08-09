@@ -11,55 +11,56 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import cu.christianrvdv.sumador.ui.settings.CurrencySymbol
+import kotlinx.coroutines.flow.first
 
 private val Context.sumadorDataStore by preferencesDataStore(name = "sumador_state")
 
 class SumadorViewModel(private val context: Context) : ViewModel() {
 
-    private fun getKeyForDenom(denom: Int) = stringPreferencesKey("cantidad_$denom")
+    // Mapa mutable de cantidades para la moneda actual
+    private val _cantidades = mutableStateMapOf<Int, String>()
 
-    private val _cantidades = mutableStateMapOf<Int, String>().apply {
-        denominaciones.forEach { this[it] = "" }
-    }
-
-    private val _state = MutableStateFlow(
-        SumadorState(cantidades = _cantidades.toMap(), total = 0L)
-    )
+    private val _state = MutableStateFlow(SumadorState(cantidades = emptyMap(), total = 0L))
     val state: StateFlow<SumadorState> = _state.asStateFlow()
 
-    // Bandera para controlar la persistencia
+    private var currentCurrency: CurrencySymbol = CurrencySymbol.PESO
     private var autoSaveEnabled = true
 
+    // Inicializar con la moneda por defecto (se cargarán los datos al setear)
     init {
-        // Cargar estado guardado (siempre al inicio, independientemente de autoSave)
-        viewModelScope.launch {
-            context.sumadorDataStore.data
-                .catch { exception ->
-                    Log.e("SumadorViewModel", "Error reading state", exception)
-                    emit(emptyPreferences())
-                }
-                .collect { prefs ->
-                    try {
-                        denominaciones.forEach { denom ->
-                            val saved = prefs[getKeyForDenom(denom)]
-                            if (saved != null) {
-                                _cantidades[denom] = saved
-                            }
-                        }
-                        calcularTotal()
-                    } catch (e: Exception) {
-                        Log.e("SumadorViewModel", "Error parsing saved state", e)
-                    }
-                }
+        // No cargamos nada aquí; la UI llamará a setCurrency con la moneda guardada
+    }
+
+    fun setCurrency(currency: CurrencySymbol) {
+        if (currentCurrency != currency) {
+            currentCurrency = currency
+            // Limpiar el mapa actual
+            _cantidades.clear()
+            // Cargar cantidades para la nueva moneda
+            cargarCantidades(currency)
         }
     }
 
-    /**
-     * Actualiza la bandera de auto-save desde el exterior (UI)
-     */
+    private fun cargarCantidades(currency: CurrencySymbol) {
+        viewModelScope.launch {
+            try {
+                val prefs = context.sumadorDataStore.data.first()
+                val denoms = getDenominations(currency)
+                denoms.forEach { denom ->
+                    val key = stringPreferencesKey("${currency.name}_$denom")
+                    val saved = prefs[key] ?: ""
+                    _cantidades[denom] = saved
+                }
+                calcularTotal()
+            } catch (e: Exception) {
+                Log.e("SumadorViewModel", "Error loading amounts for $currency", e)
+            }
+        }
+    }
+
     fun setAutoSave(enabled: Boolean) {
         autoSaveEnabled = enabled
     }
@@ -76,7 +77,8 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 context.sumadorDataStore.edit { prefs ->
-                    prefs[getKeyForDenom(denominacion)] = valor
+                    val key = stringPreferencesKey("${currentCurrency.name}_$denominacion")
+                    prefs[key] = valor
                 }
             } catch (e: Exception) {
                 Log.e("SumadorViewModel", "Error saving amount for $denominacion", e)
@@ -85,15 +87,19 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
     }
 
     private fun calcularTotal() {
-        val total = denominaciones.sumOf { denom ->
+        val denoms = getDenominations(currentCurrency)
+        val total = denoms.sumOf { denom ->
             val cantidad = _cantidades[denom]?.toIntOrNull() ?: 0
             denom.toLong() * cantidad
         }
-        _state.update { it.copy(total = total, cantidades = _cantidades.toMap()) }
+        _state.update {
+            it.copy(total = total, cantidades = _cantidades.toMap())
+        }
     }
 
     fun resetear() {
-        denominaciones.forEach { _cantidades[it] = "" }
+        val denoms = getDenominations(currentCurrency)
+        denoms.forEach { _cantidades[it] = "" }
         calcularTotal()
         if (autoSaveEnabled) {
             guardarReset()
@@ -104,8 +110,10 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
         viewModelScope.launch {
             try {
                 context.sumadorDataStore.edit { prefs ->
-                    denominaciones.forEach { denom ->
-                        prefs[getKeyForDenom(denom)] = ""
+                    val denoms = getDenominations(currentCurrency)
+                    denoms.forEach { denom ->
+                        val key = stringPreferencesKey("${currentCurrency.name}_$denom")
+                        prefs[key] = ""
                     }
                 }
             } catch (e: Exception) {

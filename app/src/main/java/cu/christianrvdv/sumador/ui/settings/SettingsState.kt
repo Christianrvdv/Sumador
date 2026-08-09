@@ -8,8 +8,8 @@ enum class ThemeOption {
 
 enum class CurrencySymbol(val symbol: String) {
     PESO("$"),
-    CUP("CUP"),
-    MN("MN")
+    USD("USD"),
+    EURO("€")
 }
 
 data class SettingsState(
