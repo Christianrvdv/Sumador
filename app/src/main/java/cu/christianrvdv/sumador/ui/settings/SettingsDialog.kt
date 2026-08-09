@@ -2,12 +2,16 @@ package cu.christianrvdv.sumador.ui.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cu.christianrvdv.sumador.R
 
@@ -23,7 +27,17 @@ fun SettingsDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.settings_title)) },
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Settings, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.settings_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        },
         text = {
             Column(
                 modifier = Modifier
@@ -33,128 +47,138 @@ fun SettingsDialog(
                 horizontalAlignment = Alignment.Start
             ) {
                 // Tema
-                Text(
-                    text = stringResource(R.string.theme_label),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                SettingsSectionHeader(
+                    icon = Icons.Default.BrightnessMedium,
+                    title = stringResource(R.string.theme_label)
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 ThemeOption.values().forEach { option ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = settingsState.theme == option,
-                            onClick = { onThemeChange(option) }
-                        )
-                        Text(
-                            text = when (option) {
-                                ThemeOption.LIGHT -> stringResource(R.string.theme_light)
-                                ThemeOption.DARK -> stringResource(R.string.theme_dark)
-                                ThemeOption.SYSTEM -> stringResource(R.string.theme_system)
-                            },
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    SettingsRadioRow(
+                        selected = settingsState.theme == option,
+                        label = when (option) {
+                            ThemeOption.LIGHT -> stringResource(R.string.theme_light)
+                            ThemeOption.DARK -> stringResource(R.string.theme_dark)
+                            ThemeOption.SYSTEM -> stringResource(R.string.theme_system)
+                        },
+                        onClick = { onThemeChange(option) }
+                    )
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Símbolo de moneda
-                Text(
-                    text = stringResource(R.string.currency_label),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                // Moneda
+                SettingsSectionHeader(
+                    icon = Icons.Default.AttachMoney,
+                    title = stringResource(R.string.currency_label)
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(4.dp))
                 CurrencySymbol.values().forEach { currency ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        RadioButton(
-                            selected = settingsState.currencySymbol == currency,
-                            onClick = { onCurrencyChange(currency) }
-                        )
-                        Text(
-                            text = currency.symbol,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    SettingsRadioRow(
+                        selected = settingsState.currencySymbol == currency,
+                        label = "${currency.symbol} (${currency.name})",
+                        onClick = { onCurrencyChange(currency) }
+                    )
                 }
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
                 // Orden de billetes
-                Text(
-                    text = stringResource(R.string.sort_label),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
+                SettingsSectionHeader(
+                    icon = Icons.Default.Sort,
+                    title = stringResource(R.string.sort_label)
                 )
-                Spacer(Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = settingsState.sortAscending,
-                        onClick = { onSortChange(true) }
-                    )
-                    Text(stringResource(R.string.sort_ascending), style = MaterialTheme.typography.bodyMedium)
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = !settingsState.sortAscending,
-                        onClick = { onSortChange(false) }
-                    )
-                    Text(stringResource(R.string.sort_descending), style = MaterialTheme.typography.bodyMedium)
-                }
+                Spacer(Modifier.height(4.dp))
+                SettingsRadioRow(
+                    selected = settingsState.sortAscending,
+                    label = stringResource(R.string.sort_ascending),
+                    onClick = { onSortChange(true) }
+                )
+                SettingsRadioRow(
+                    selected = !settingsState.sortAscending,
+                    label = stringResource(R.string.sort_descending),
+                    onClick = { onSortChange(false) }
+                )
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
                 // Guardado automático
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.auto_save_label),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Switch(
-                        checked = settingsState.autoSave,
-                        onCheckedChange = onAutoSaveChange
-                    )
-                }
+                SettingsSwitchRow(
+                    label = stringResource(R.string.auto_save_label),
+                    checked = settingsState.autoSave,
+                    onCheckedChange = onAutoSaveChange
+                )
 
                 Divider(modifier = Modifier.padding(vertical = 12.dp))
 
-                // Confirmar antes de limpiar
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = stringResource(R.string.confirm_clear_label),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Switch(
-                        checked = settingsState.confirmClear,
-                        onCheckedChange = onConfirmClearChange
-                    )
-                }
+                // Confirmar limpiar
+                SettingsSwitchRow(
+                    label = stringResource(R.string.confirm_clear_label),
+                    checked = settingsState.confirmClear,
+                    onCheckedChange = onConfirmClearChange
+                )
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.ok))
+                Text(stringResource(R.string.ok), fontWeight = FontWeight.Bold)
             }
-        }
+        },
+        shape = RoundedCornerShape(28.dp)
     )
+}
+
+// Componentes auxiliares
+@Composable
+private fun SettingsSectionHeader(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun SettingsRadioRow(selected: Boolean, label: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        RadioButton(
+            selected = selected,
+            onClick = onClick,
+            modifier = Modifier.size(20.dp)
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun SettingsSwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier.height(48.dp)
+        )
+    }
 }

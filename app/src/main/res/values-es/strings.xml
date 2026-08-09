@@ -25,4 +25,6 @@
     <string name="error_saving_state">Error al guardar cantidades</string>
     <string name="auto_save_label">Guardar cantidades automáticamente</string>
     <string name="confirm_clear_label">Confirmar antes de limpiar</string>
+    <string name="total_bills">Billetes: %d</string>
+    <string name="total_bills_detail">%d billetes en total</string>
 </resources>

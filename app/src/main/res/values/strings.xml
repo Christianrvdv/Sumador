@@ -25,4 +25,6 @@
     <string name="error_saving_state">Error saving amounts</string>
     <string name="auto_save_label">Auto-save amounts</string>
     <string name="confirm_clear_label">Confirm before clearing</string>
+    <string name="total_bills">Bills: %d</string>
+    <string name="total_bills_detail">%d bills total</string>
 </resources>

@@ -2,22 +2,25 @@ package cu.christianrvdv.sumador.ui.sumador
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Money
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -45,77 +48,115 @@ fun SumadorScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
 
-    // Actualizar la bandera de autoSave en el ViewModel cuando cambie en settings
+    // Sincronizar autoSave
     LaunchedEffect(settingsState.autoSave) {
         viewModel.setAutoSave(settingsState.autoSave)
     }
 
-    // Ordenar denominaciones según configuración
+    // Ordenar denominaciones
     val denominacionesOrdenadas = remember(settingsState.sortAscending) {
-        if (settingsState.sortAscending) {
-            denominaciones.sorted()
-        } else {
-            denominaciones.sortedDescending()
-        }
+        if (settingsState.sortAscending) denominaciones.sorted() else denominaciones.sortedDescending()
     }
 
-    // Animación de pulso en el total cuando cambia
+    // Animación del total (escala + color)
     var pulse by remember { mutableStateOf(false) }
     val totalScale by animateFloatAsState(
-        targetValue = if (pulse) 1.04f else 1f,
+        targetValue = if (pulse) 1.05f else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
+            dampingRatio = Spring.DampingRatioLowBouncy,
             stiffness = Spring.StiffnessMedium
         ),
-        finishedListener = { pulse = false },
-        label = "total_pulse"
+        label = "total_scale"
+    )
+    val totalColor by animateColorAsState(
+        targetValue = if (pulse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+        animationSpec = tween(300),
+        label = "total_color"
     )
     LaunchedEffect(state.total) {
         pulse = true
     }
 
-    // Estados de visibilidad para aparición escalonada de las filas
+    // Visibilidad escalonada de filas
     val rowVisibility = remember { denominacionesOrdenadas.map { mutableStateOf(false) } }
     denominacionesOrdenadas.forEachIndexed { index, _ ->
         LaunchedEffect(index) {
-            delay(index * 80L)
+            delay(index * 60L)
             rowVisibility[index].value = true
         }
     }
 
+    // Total formateado
     val totalFormateado = remember(state.total) {
         NumberFormat.getIntegerInstance().format(state.total)
     }
+    // Conteo de billetes totales
+    val totalBills = state.cantidades.values.sumOf { it.toIntOrNull() ?: 0 }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.app_name)) },
+            TopAppBar(
+                title = {
+                    Column {
+                        Text(
+                            text = stringResource(R.string.app_name),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Text(
+                            text = stringResource(R.string.total_bills, totalBills),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
-                            imageVector = Icons.Default.Settings,
+                            Icons.Default.Settings,
                             contentDescription = stringResource(R.string.settings)
                         )
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                ),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             )
-        }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    if (settingsState.confirmClear) {
+                        showResetDialog = true
+                    } else {
+                        viewModel.resetear()
+                    }
+                },
+                containerColor = MaterialTheme.colorScheme.errorContainer,
+                contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                shape = RoundedCornerShape(16.dp),
+                elevation = FloatingActionButtonDefaults.elevation(6.dp)
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear_all))
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(horizontal = 20.dp, vertical = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Lista de billetes
             denominacionesOrdenadas.forEachIndexed { index, denom ->
                 AnimatedVisibility(
                     visible = rowVisibility[index].value,
@@ -133,67 +174,64 @@ fun SumadorScreen(
                         currencySymbol = settingsState.currencySymbol.symbol
                     )
                 }
-                Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Botón de limpiar con confirmación condicional
-            FilledTonalButton(
-                onClick = {
-                    if (settingsState.confirmClear) {
-                        showResetDialog = true
-                    } else {
-                        viewModel.resetear()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
-            ) {
-                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear_all))
-                Spacer(Modifier.width(10.dp))
-                Text(stringResource(R.string.clear_all), style = MaterialTheme.typography.titleMedium)
-            }
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Tarjeta del total
+            // Tarjeta del total con gradiente
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .scale(totalScale),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                ),
-                shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                colors = CardDefaults.cardColors(containerColor = totalColor),
+                shape = RoundedCornerShape(28.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Column(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(28.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                    MaterialTheme.colorScheme.tertiaryContainer
+                                ),
+                                startY = 0f,
+                                endY = Float.POSITIVE_INFINITY
+                            )
+                        )
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stringResource(R.string.total),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        letterSpacing = 3.sp
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = "$totalFormateado ${settingsState.currencySymbol.symbol}",
-                        style = MaterialTheme.typography.displaySmall,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = stringResource(R.string.total).uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                            letterSpacing = 2.sp
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "$totalFormateado ${settingsState.currencySymbol.symbol}",
+                            style = MaterialTheme.typography.displayMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                        )
+                        if (totalBills > 0) {
+                            Text(
+                                text = stringResource(R.string.total_bills_detail, totalBills),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                            )
+                        }
+                    }
                 }
             }
         }
     }
 
-    // Diálogo de confirmación para reiniciar (solo se muestra si confirmClear es true y se dispara)
+    // Diálogos
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -217,35 +255,24 @@ fun SumadorScreen(
         )
     }
 
-    // Diálogo de configuración
     if (showSettingsDialog) {
         SettingsDialog(
             settingsState = settingsState,
             onDismiss = { showSettingsDialog = false },
             onThemeChange = { theme ->
-                coroutineScope.launch {
-                    settingsViewModel.updateTheme(theme)
-                }
+                coroutineScope.launch { settingsViewModel.updateTheme(theme) }
             },
             onCurrencyChange = { currency ->
-                coroutineScope.launch {
-                    settingsViewModel.updateCurrency(currency)
-                }
+                coroutineScope.launch { settingsViewModel.updateCurrency(currency) }
             },
             onSortChange = { ascending ->
-                coroutineScope.launch {
-                    settingsViewModel.updateSortOrder(ascending)
-                }
+                coroutineScope.launch { settingsViewModel.updateSortOrder(ascending) }
             },
             onAutoSaveChange = { enabled ->
-                coroutineScope.launch {
-                    settingsViewModel.updateAutoSave(enabled)
-                }
+                coroutineScope.launch { settingsViewModel.updateAutoSave(enabled) }
             },
             onConfirmClearChange = { enabled ->
-                coroutineScope.launch {
-                    settingsViewModel.updateConfirmClear(enabled)
-                }
+                coroutineScope.launch { settingsViewModel.updateConfirmClear(enabled) }
             }
         )
     }
@@ -258,55 +285,99 @@ fun BillInputRow(
     onValueChange: (String) -> Unit,
     currencySymbol: String
 ) {
-    ElevatedCard(
+    var textFieldValue by remember(value) { mutableStateOf(value) }
+
+    // Sincronizar con el estado externo (cuando se resetea, etc.)
+    LaunchedEffect(value) {
+        if (textFieldValue != value) {
+            textFieldValue = value
+        }
+    }
+
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 imageVector = Icons.Default.Money,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(24.dp)
             )
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(10.dp))
 
             Text(
-                text = "${stringResource(R.string.bill_of)} $denomination $currencySymbol",
-                style = MaterialTheme.typography.bodyLarge,
+                text = "$denomination $currencySymbol",
+                style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
 
+            // Botón decrementar
+            IconButton(
+                onClick = {
+                    val current = textFieldValue.toIntOrNull() ?: 0
+                    if (current > 0) {
+                        val newVal = (current - 1).toString()
+                        textFieldValue = newVal
+                        onValueChange(newVal)
+                    }
+                },
+                enabled = textFieldValue.toIntOrNull()?.let { it > 0 } ?: false,
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(Icons.Default.Remove, contentDescription = "Decrementar")
+            }
+
+            // Campo de texto
             OutlinedTextField(
-                value = value,
-                onValueChange = { newText ->
+                value = textFieldValue,
+                onValueChange = { newText: String ->
                     if (newText.all { it.isDigit() } && newText.length <= 5) {
+                        textFieldValue = newText
                         onValueChange(newText)
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 singleLine = true,
-                modifier = Modifier.width(110.dp),
-                placeholder = { Text(stringResource(R.string.placeholder_zero)) },
+                modifier = Modifier
+                    .width(80.dp)
+                    .padding(vertical = 4.dp),
+                placeholder = { Text("0") },
+                textStyle = MaterialTheme.typography.titleLarge.copy(
+                    textAlign = TextAlign.Center
+                ),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                ),
-                textStyle = MaterialTheme.typography.titleLarge.copy(
-                    textAlign = TextAlign.Center
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 )
             )
+
+            // Botón incrementar
+            IconButton(
+                onClick = {
+                    val current = textFieldValue.toIntOrNull() ?: 0
+                    val newVal = (current + 1).toString()
+                    textFieldValue = newVal
+                    onValueChange(newVal)
+                },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Incrementar")
+            }
         }
     }
 }
