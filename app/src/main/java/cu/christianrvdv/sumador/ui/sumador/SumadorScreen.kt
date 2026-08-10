@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -53,48 +54,40 @@ fun SumadorScreen(
         viewModel.setAutoSave(settingsState.autoSave)
     }
 
-    // Notificar al ViewModel cuando cambie la moneda para cargar las cantidades correspondientes
     LaunchedEffect(settingsState.currencySymbol) {
         viewModel.setCurrency(settingsState.currencySymbol)
     }
 
-    // Obtener denominaciones según la moneda actual
     val denominacionesActuales = remember(settingsState.currencySymbol) {
         getDenominations(settingsState.currencySymbol)
     }
 
-    // Ordenar denominaciones según preferencia
     val denominacionesOrdenadas = remember(settingsState.sortAscending, settingsState.currencySymbol) {
         if (settingsState.sortAscending) denominacionesActuales.sorted() else denominacionesActuales.sortedDescending()
     }
 
-    // Animación del total (escala + color) con reinicio automático
+    // Animación del total
     var pulse by remember { mutableStateOf(false) }
     val totalScale by animateFloatAsState(
-        targetValue = if (pulse) 1.05f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioLowBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
+        targetValue = if (pulse) 1.02f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
         label = "total_scale"
     )
     val totalColor by animateColorAsState(
-        targetValue = if (pulse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
+        targetValue = if (pulse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
         animationSpec = tween(300),
         label = "total_color"
     )
-    // Cuando el total cambia, activamos el pulso y lo desactivamos tras un breve retraso
     LaunchedEffect(state.total) {
         pulse = true
-        delay(300) // duración de la animación
+        delay(300)
         pulse = false
     }
 
-    // Visibilidad escalonada de filas (se reinicia al cambiar la lista de denominaciones)
+    // Visibilidad escalonada
     val rowVisibility = remember(denominacionesOrdenadas) {
         denominacionesOrdenadas.map { mutableStateOf(false) }
     }
-    // Al cambiar la lista, reiniciamos las visibilidades
     LaunchedEffect(denominacionesOrdenadas) {
         denominacionesOrdenadas.forEachIndexed { index, _ ->
             delay(index * 60L)
@@ -102,11 +95,9 @@ fun SumadorScreen(
         }
     }
 
-    // Total formateado
     val totalFormateado = remember(state.total) {
         NumberFormat.getIntegerInstance().format(state.total)
     }
-    // Conteo de billetes totales
     val totalBills = state.cantidades.values.sumOf { it.toIntOrNull() ?: 0 }
 
     Scaffold(
@@ -172,7 +163,6 @@ fun SumadorScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Lista de billetes
             denominacionesOrdenadas.forEachIndexed { index, denom ->
                 AnimatedVisibility(
                     visible = rowVisibility[index].value,
@@ -199,8 +189,10 @@ fun SumadorScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .scale(totalScale),
-                colors = CardDefaults.cardColors(containerColor = totalColor),
-                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = totalColor
+                ),
+                shape = RoundedCornerShape(32.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Box(
@@ -209,8 +201,8 @@ fun SumadorScreen(
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.secondaryContainer,
-                                    MaterialTheme.colorScheme.tertiaryContainer
+                                    MaterialTheme.colorScheme.primary,
+                                    MaterialTheme.colorScheme.primaryContainer
                                 ),
                                 startY = 0f,
                                 endY = Float.POSITIVE_INFINITY
@@ -222,8 +214,8 @@ fun SumadorScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = stringResource(R.string.total).uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
                             letterSpacing = 2.sp
                         )
                         Spacer(Modifier.height(4.dp))
@@ -232,13 +224,13 @@ fun SumadorScreen(
                             style = MaterialTheme.typography.displayMedium.copy(
                                 fontWeight = FontWeight.Bold
                             ),
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         if (totalBills > 0) {
                             Text(
                                 text = stringResource(R.string.total_bills_detail, totalBills),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.6f)
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
                             )
                         }
                     }
@@ -247,7 +239,6 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogos
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -306,7 +297,6 @@ fun BillInputRow(
 ) {
     var textFieldValue by remember(value) { mutableStateOf(value) }
 
-    // Sincronizar con el estado externo (cuando se resetea, etc.)
     LaunchedEffect(value) {
         if (textFieldValue != value) {
             textFieldValue = value
@@ -315,87 +305,122 @@ fun BillInputRow(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .background(
+                    color = MaterialTheme.colorScheme.surface,
+                    shape = RoundedCornerShape(24.dp)
+                )
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Icono
             Icon(
                 imageVector = Icons.Default.Money,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(28.dp)
             )
-            Spacer(Modifier.width(10.dp))
+            Spacer(Modifier.width(16.dp))
 
+            // Denominación
             Text(
                 text = "$denomination $currencySymbol",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
 
-            // Botón decrementar
-            IconButton(
-                onClick = {
-                    val current = textFieldValue.toIntOrNull() ?: 0
-                    if (current > 0) {
-                        val newVal = (current - 1).toString()
+            // Controles
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Botón -
+                IconButton(
+                    onClick = {
+                        val current = textFieldValue.toIntOrNull() ?: 0
+                        if (current > 0) {
+                            val newVal = (current - 1).toString()
+                            textFieldValue = newVal
+                            onValueChange(newVal)
+                        }
+                    },
+                    enabled = textFieldValue.toIntOrNull()?.let { it > 0 } ?: false,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            shape = RoundedCornerShape(50)
+                        )
+                ) {
+                    Icon(
+                        Icons.Default.Remove,
+                        contentDescription = "Decrementar",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                // Campo de texto
+                OutlinedTextField(
+                    value = textFieldValue,
+                    onValueChange = { newText: String ->
+                        if (newText.all { it.isDigit() } && newText.length <= 5) {
+                            textFieldValue = newText
+                            onValueChange(newText)
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier
+                        .width(64.dp)
+                        .padding(horizontal = 4.dp),
+                    placeholder = { Text("0") },
+                    textStyle = MaterialTheme.typography.titleLarge.copy(
+                        textAlign = TextAlign.Center,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent,
+                        focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+
+                // Botón +
+                IconButton(
+                    onClick = {
+                        val current = textFieldValue.toIntOrNull() ?: 0
+                        val newVal = (current + 1).toString()
                         textFieldValue = newVal
                         onValueChange(newVal)
-                    }
-                },
-                enabled = textFieldValue.toIntOrNull()?.let { it > 0 } ?: false,
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = "Decrementar")
-            }
-
-            // Campo de texto
-            OutlinedTextField(
-                value = textFieldValue,
-                onValueChange = { newText: String ->
-                    if (newText.all { it.isDigit() } && newText.length <= 5) {
-                        textFieldValue = newText
-                        onValueChange(newText)
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier
-                    .width(80.dp)
-                    .padding(vertical = 4.dp),
-                placeholder = { Text("0") },
-                textStyle = MaterialTheme.typography.titleLarge.copy(
-                    textAlign = TextAlign.Center
-                ),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
-
-            // Botón incrementar
-            IconButton(
-                onClick = {
-                    val current = textFieldValue.toIntOrNull() ?: 0
-                    val newVal = (current + 1).toString()
-                    textFieldValue = newVal
-                    onValueChange(newVal)
-                },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Incrementar")
+                    },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(50)
+                        )
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Incrementar",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
+                }
             }
         }
     }
