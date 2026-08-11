@@ -104,7 +104,7 @@ fun SumadorScreen(
                     IconButton(onClick = { showAboutDialog = true }) {
                         Icon(
                             Icons.Default.Info,
-                            contentDescription = "Acerca de"
+                            contentDescription = stringResource(R.string.content_description_about)
                         )
                     }
                     IconButton(onClick = { showSettingsDialog = true }) {
@@ -166,7 +166,7 @@ fun SumadorScreen(
                             if (totalBills > 0) {
                                 Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = "($totalBills)",
+                                    text = stringResource(R.string.total_bills_short, totalBills),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -425,7 +425,7 @@ fun BillInputRow(
                 ) {
                     Icon(
                         Icons.Default.Remove,
-                        contentDescription = "Decrementar",
+                        contentDescription = stringResource(R.string.content_description_decrement),
                         tint = if (billCount > 0)
                             MaterialTheme.colorScheme.primary
                         else
@@ -481,7 +481,7 @@ fun BillInputRow(
                 ) {
                     Icon(
                         Icons.Default.Add,
-                        contentDescription = "Incrementar",
+                        contentDescription = stringResource(R.string.content_description_increment),
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 }

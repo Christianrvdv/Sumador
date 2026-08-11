@@ -143,19 +143,19 @@ fun SettingsBottomSheet(
             // --- Sección Switches ---
             SettingsSection(
                 icon = Icons.Default.ToggleOn,
-                title = "Opciones"
+                title = stringResource(R.string.settings_options_section)
             ) {
                 SettingsSwitchItem(
                     label = stringResource(R.string.auto_save_label),
                     checked = settingsState.autoSave,
                     onCheckedChange = onAutoSaveChange,
-                    description = "Guarda las cantidades automáticamente"
+                    description = stringResource(R.string.auto_save_description)
                 )
                 SettingsSwitchItem(
                     label = stringResource(R.string.confirm_clear_label),
                     checked = settingsState.confirmClear,
                     onCheckedChange = onConfirmClearChange,
-                    description = "Pide confirmación antes de limpiar"
+                    description = stringResource(R.string.confirm_clear_description)
                 )
             }
 
@@ -170,7 +170,7 @@ fun SettingsBottomSheet(
             ) {
                 Icon(Icons.Default.Info, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text("Acerca de")
+                Text(stringResource(R.string.settings_about_button))
             }
 
             // Botón de cierre
@@ -186,7 +186,7 @@ fun SettingsBottomSheet(
                 )
             ) {
                 Text(
-                    text = "Listo",
+                    text = stringResource(R.string.settings_done_button),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )

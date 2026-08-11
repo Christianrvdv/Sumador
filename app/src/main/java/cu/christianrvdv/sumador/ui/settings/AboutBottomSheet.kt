@@ -14,8 +14,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cu.christianrvdv.sumador.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,13 +47,13 @@ fun AboutBottomSheet(
             // Título y versión
             Column {
                 Text(
-                    text = "Acerca de Sumador",
+                    text = stringResource(R.string.about_title),
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "Versión $versionName",
+                    text = stringResource(R.string.about_version, versionName),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -59,7 +61,7 @@ fun AboutBottomSheet(
 
             // Descripción de la app
             Text(
-                text = "Sumador es una aplicación para contar billetes y monedas de forma rápida y sencilla. Ideal para comerciantes, cajeros y cualquier persona que maneje efectivo.",
+                text = stringResource(R.string.about_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp)
@@ -67,19 +69,19 @@ fun AboutBottomSheet(
 
             // Características principales
             Text(
-                text = "Principales características:",
+                text = stringResource(R.string.about_features_title),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             listOf(
-                "Múltiples monedas (Peso, USD, Euro)",
-                "Orden ascendente/descendente de billetes",
-                "Guardado automático de cantidades",
-                "Temas claro, oscuro y sistema",
-                "Soporte para varios idiomas (español, inglés)"
-            ).forEach { feature ->
+                R.string.about_feature_currency,
+                R.string.about_feature_sort,
+                R.string.about_feature_autosave,
+                R.string.about_feature_themes,
+                R.string.about_feature_languages
+            ).forEach { featureResId ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -94,7 +96,7 @@ fun AboutBottomSheet(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = feature,
+                        text = stringResource(featureResId),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -105,14 +107,14 @@ fun AboutBottomSheet(
 
             // Código abierto
             Text(
-                text = "Código abierto",
+                text = stringResource(R.string.about_open_source_title),
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
-                text = "Sumador es un proyecto de código abierto. Puedes explorar el código fuente, contribuir con mejoras, reportar issues o hacer fork del proyecto.",
+                text = stringResource(R.string.about_open_source_text),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -141,7 +143,7 @@ fun AboutBottomSheet(
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "Ver en GitHub",
+                    text = stringResource(R.string.about_github_button),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
@@ -157,12 +159,12 @@ fun AboutBottomSheet(
             ) {
                 Column {
                     Text(
-                        text = "Desarrollador",
+                        text = stringResource(R.string.about_developer_label),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Christian R Vazquez",
+                        text = stringResource(R.string.about_developer_name),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -192,7 +194,7 @@ fun AboutBottomSheet(
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
-                        text = "Portafolio",
+                        text = stringResource(R.string.about_portfolio_button),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -212,7 +214,7 @@ fun AboutBottomSheet(
                 )
             ) {
                 Text(
-                    text = "Cerrar",
+                    text = stringResource(R.string.about_close_button),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )

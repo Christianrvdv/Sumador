@@ -1,4 +1,5 @@
 <resources>
+    <!-- App -->
     <string name="app_name">Sumador</string>
     <string name="settings">Settings</string>
     <string name="total">TOTAL</string>
@@ -8,6 +9,8 @@
     <string name="clear_confirm">Yes, clear</string>
     <string name="cancel">Cancel</string>
     <string name="ok">OK</string>
+
+    <!-- Settings -->
     <string name="settings_title">Settings</string>
     <string name="theme_label">Theme</string>
     <string name="theme_light">Light</string>
@@ -19,14 +22,8 @@
     <string name="sort_descending">Descending (5000,2000,1000…)</string>
     <string name="bill_of">Bills of</string>
     <string name="placeholder_zero">0</string>
-    <string name="error_reading_settings">Error reading settings</string>
-    <string name="error_saving_settings">Error saving settings</string>
-    <string name="error_reading_state">Error reading saved amounts</string>
-    <string name="error_saving_state">Error saving amounts</string>
     <string name="auto_save_label">Auto-save amounts</string>
     <string name="confirm_clear_label">Confirm before clearing</string>
-    <string name="total_bills">Bills: %d</string>
-    <string name="total_bills_detail">%d bills total</string>
     <string name="language_label">Language</string>
     <string name="language_english">English</string>
     <string name="language_spanish">Spanish</string>
@@ -34,6 +31,51 @@
     <string name="currency_peso">Cuban Peso ($)</string>
     <string name="currency_usd">US Dollar (USD)</string>
     <string name="currency_euro">Euro (€)</string>
+
+    <!-- Error messages -->
+    <string name="error_reading_settings">Error reading settings</string>
+    <string name="error_saving_settings">Error saving settings</string>
+    <string name="error_reading_state">Error reading saved amounts</string>
+    <string name="error_saving_state">Error saving amounts</string>
+
+    <!-- Bill counts -->
+    <string name="total_bills">Bills: %d</string>
+    <string name="total_bills_detail">%d bills total</string>
+    <string name="total_bills_short">(%d)</string>   <!-- New: short parenthesized count -->
+
+    <!-- Empty state -->
     <string name="empty_state_title">No bills added yet</string>
     <string name="empty_state_description">Use the + button to add quantities and start counting</string>
+
+    <!-- ===== NEW STRINGS FOR HARDCODED TEXTS ===== -->
+
+    <!-- About screen -->
+    <string name="about_title">About Sumador</string>
+    <string name="about_version">Version %s</string>
+    <string name="about_description">Sumador is an app for counting bills and coins quickly and easily. Ideal for merchants, cashiers, and anyone handling cash.</string>
+    <string name="about_features_title">Main features:</string>
+    <string name="about_feature_currency">Multiple currencies (Peso, USD, Euro)</string>
+    <string name="about_feature_sort">Ascending/descending bill order</string>
+    <string name="about_feature_autosave">Automatic saving of amounts</string>
+    <string name="about_feature_themes">Light, dark, and system themes</string>
+    <string name="about_feature_languages">Support for multiple languages (Spanish, English)</string>
+    <string name="about_open_source_title">Open source</string>
+    <string name="about_open_source_text">Sumador is an open source project. You can explore the source code, contribute improvements, report issues, or fork the project.</string>
+    <string name="about_github_button">View on GitHub</string>
+    <string name="about_developer_label">Developer</string>
+    <string name="about_developer_name">Christian R Vazquez</string>
+    <string name="about_portfolio_button">Portfolio</string>
+    <string name="about_close_button">Close</string>
+
+    <!-- Content descriptions for accessibility -->
+    <string name="content_description_about">About</string>
+    <string name="content_description_decrement">Decrement</string>
+    <string name="content_description_increment">Increment</string>
+
+    <!-- Settings additional strings -->
+    <string name="settings_options_section">Options</string>
+    <string name="auto_save_description">Automatically save amounts</string>
+    <string name="confirm_clear_description">Ask for confirmation before clearing</string>
+    <string name="settings_about_button">About</string>
+    <string name="settings_done_button">Done</string>
 </resources>

@@ -1,4 +1,5 @@
 <resources>
+    <!-- App -->
     <string name="app_name">Sumador de Efectivo</string>
     <string name="settings">Configuraciones</string>
     <string name="total">TOTAL</string>
@@ -8,6 +9,8 @@
     <string name="clear_confirm">Sí, limpiar</string>
     <string name="cancel">Cancelar</string>
     <string name="ok">Aceptar</string>
+
+    <!-- Settings -->
     <string name="settings_title">Configuraciones</string>
     <string name="theme_label">Tema</string>
     <string name="theme_light">Claro</string>
@@ -19,14 +22,8 @@
     <string name="sort_descending">Descendente (5000,2000,1000…)</string>
     <string name="bill_of">Billetes de</string>
     <string name="placeholder_zero">0</string>
-    <string name="error_reading_settings">Error al leer configuración</string>
-    <string name="error_saving_settings">Error al guardar configuración</string>
-    <string name="error_reading_state">Error al leer cantidades guardadas</string>
-    <string name="error_saving_state">Error al guardar cantidades</string>
     <string name="auto_save_label">Guardar cantidades automáticamente</string>
     <string name="confirm_clear_label">Confirmar antes de limpiar</string>
-    <string name="total_bills">Billetes: %d</string>
-    <string name="total_bills_detail">%d billetes en total</string>
     <string name="language_label">Idioma</string>
     <string name="language_english">Inglés</string>
     <string name="language_spanish">Español</string>
@@ -34,6 +31,51 @@
     <string name="currency_peso">Peso cubano ($)</string>
     <string name="currency_usd">Dólar estadounidense (USD)</string>
     <string name="currency_euro">Euro (€)</string>
+
+    <!-- Error messages -->
+    <string name="error_reading_settings">Error al leer configuración</string>
+    <string name="error_saving_settings">Error al guardar configuración</string>
+    <string name="error_reading_state">Error al leer cantidades guardadas</string>
+    <string name="error_saving_state">Error al guardar cantidades</string>
+
+    <!-- Bill counts -->
+    <string name="total_bills">Billetes: %d</string>
+    <string name="total_bills_detail">%d billetes en total</string>
+    <string name="total_bills_short">(%d)</string>   <!-- Nueva: cuenta corta entre paréntesis -->
+
+    <!-- Empty state -->
     <string name="empty_state_title">Aún no hay billetes</string>
     <string name="empty_state_description">Usa el botón + para agregar cantidades y empezar a contar</string>
+
+    <!-- ===== NUEVAS CADENAS PARA TEXTOS HARCODEADOS ===== -->
+
+    <!-- Pantalla Acerca de -->
+    <string name="about_title">Acerca de Sumador</string>
+    <string name="about_version">Versión %s</string>
+    <string name="about_description">Sumador es una aplicación para contar billetes y monedas de forma rápida y sencilla. Ideal para comerciantes, cajeros y cualquier persona que maneje efectivo.</string>
+    <string name="about_features_title">Principales características:</string>
+    <string name="about_feature_currency">Múltiples monedas (Peso, USD, Euro)</string>
+    <string name="about_feature_sort">Orden ascendente/descendente de billetes</string>
+    <string name="about_feature_autosave">Guardado automático de cantidades</string>
+    <string name="about_feature_themes">Temas claro, oscuro y sistema</string>
+    <string name="about_feature_languages">Soporte para varios idiomas (español, inglés)</string>
+    <string name="about_open_source_title">Código abierto</string>
+    <string name="about_open_source_text">Sumador es un proyecto de código abierto. Puedes explorar el código fuente, contribuir con mejoras, reportar issues o hacer fork del proyecto.</string>
+    <string name="about_github_button">Ver en GitHub</string>
+    <string name="about_developer_label">Desarrollador</string>
+    <string name="about_developer_name">Christian R Vazquez</string>
+    <string name="about_portfolio_button">Portafolio</string>
+    <string name="about_close_button">Cerrar</string>
+
+    <!-- Descripciones de accesibilidad -->
+    <string name="content_description_about">Acerca de</string>
+    <string name="content_description_decrement">Decrementar</string>
+    <string name="content_description_increment">Incrementar</string>
+
+    <!-- Configuraciones adicionales -->
+    <string name="settings_options_section">Opciones</string>
+    <string name="auto_save_description">Guarda las cantidades automáticamente</string>
+    <string name="confirm_clear_description">Pide confirmación antes de limpiar</string>
+    <string name="settings_about_button">Acerca de</string>
+    <string name="settings_done_button">Listo</string>
 </resources>
