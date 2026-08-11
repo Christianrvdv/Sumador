@@ -29,19 +29,23 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
     private var currentCurrency: CurrencySymbol = CurrencySymbol.PESO
     private var autoSaveEnabled = true
 
-    // Inicializar con la moneda por defecto (se cargarán los datos al setear)
-    init {
-        // No cargamos nada aquí; la UI llamará a setCurrency con la moneda guardada
-    }
-
+    /**
+     * Establece la moneda actual y carga los datos guardados para esa moneda.
+     * Si la moneda cambia, se limpia el mapa y se recargan los datos.
+     */
     fun setCurrency(currency: CurrencySymbol) {
         if (currentCurrency != currency) {
             currentCurrency = currency
-            // Limpiar el mapa actual
             _cantidades.clear()
-            // Cargar cantidades para la nueva moneda
+            cargarCantidades(currency)
+        } else {
+            // Si es la misma moneda, pero queremos recargar (por ejemplo, al iniciar)
             cargarCantidades(currency)
         }
+    }
+
+    fun setAutoSave(enabled: Boolean) {
+        autoSaveEnabled = enabled
     }
 
     private fun cargarCantidades(currency: CurrencySymbol) {
@@ -59,10 +63,6 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
                 Log.e("SumadorViewModel", "Error loading amounts for $currency", e)
             }
         }
-    }
-
-    fun setAutoSave(enabled: Boolean) {
-        autoSaveEnabled = enabled
     }
 
     fun updateCantidad(denominacion: Int, valor: String) {

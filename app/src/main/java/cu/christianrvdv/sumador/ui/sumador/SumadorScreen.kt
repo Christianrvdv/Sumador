@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cu.christianrvdv.sumador.R
-import cu.christianrvdv.sumador.ui.settings.*   // Importa todo lo necesario (SettingsBottomSheet, ThemeOption, etc.)
+import cu.christianrvdv.sumador.ui.settings.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -46,10 +46,12 @@ fun SumadorScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
 
-    // Sincronizar configuraciones
+    // ✅ Sincronizar autoSave de manera reactiva (cada vez que cambie en settings)
     LaunchedEffect(settingsState.autoSave) {
         viewModel.setAutoSave(settingsState.autoSave)
     }
+
+    // ✅ Sincronizar moneda de manera reactiva
     LaunchedEffect(settingsState.currencySymbol) {
         viewModel.setCurrency(settingsState.currencySymbol)
     }
@@ -281,9 +283,8 @@ fun SumadorScreen(
         )
     }
 
-    // ========== AQUÍ ESTÁ EL CAMBIO PRINCIPAL ==========
     if (showSettingsDialog) {
-        SettingsBottomSheet(   // ← Ahora usa el BottomSheet
+        SettingsBottomSheet(
             settingsState = settingsState,
             onDismiss = { showSettingsDialog = false },
             onThemeChange = { theme: ThemeOption ->
