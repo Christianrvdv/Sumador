@@ -34,4 +34,6 @@
     <string name="currency_peso">Peso cubano ($)</string>
     <string name="currency_usd">Dólar estadounidense (USD)</string>
     <string name="currency_euro">Euro (€)</string>
+    <string name="empty_state_title">Aún no hay billetes</string>
+    <string name="empty_state_description">Usa el botón + para agregar cantidades y empezar a contar</string>
 </resources>

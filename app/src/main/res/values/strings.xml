@@ -34,4 +34,6 @@
     <string name="currency_peso">Cuban Peso ($)</string>
     <string name="currency_usd">US Dollar (USD)</string>
     <string name="currency_euro">Euro (€)</string>
+    <string name="empty_state_title">No bills added yet</string>
+    <string name="empty_state_description">Use the + button to add quantities and start counting</string>
 </resources>

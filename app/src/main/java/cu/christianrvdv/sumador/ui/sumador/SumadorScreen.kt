@@ -16,7 +16,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -27,9 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cu.christianrvdv.sumador.R
-import cu.christianrvdv.sumador.ui.settings.SettingsDialog
-import cu.christianrvdv.sumador.ui.settings.SettingsViewModel
-import cu.christianrvdv.sumador.ui.settings.CurrencySymbol
+import cu.christianrvdv.sumador.ui.settings.*   // Importa todo lo necesario (SettingsBottomSheet, ThemeOption, etc.)
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -49,11 +46,10 @@ fun SumadorScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
 
-    // Sincronizar autoSave
+    // Sincronizar configuraciones
     LaunchedEffect(settingsState.autoSave) {
         viewModel.setAutoSave(settingsState.autoSave)
     }
-
     LaunchedEffect(settingsState.currencySymbol) {
         viewModel.setCurrency(settingsState.currencySymbol)
     }
@@ -66,64 +62,43 @@ fun SumadorScreen(
         if (settingsState.sortAscending) denominacionesActuales.sorted() else denominacionesActuales.sortedDescending()
     }
 
-    // Animación del total
-    var pulse by remember { mutableStateOf(false) }
-    val totalScale by animateFloatAsState(
-        targetValue = if (pulse) 1.02f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
-        label = "total_scale"
-    )
-    val totalColor by animateColorAsState(
-        targetValue = if (pulse) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
-        animationSpec = tween(300),
-        label = "total_color"
-    )
-    LaunchedEffect(state.total) {
-        pulse = true
-        delay(300)
-        pulse = false
-    }
-
-    // Visibilidad escalonada
-    val rowVisibility = remember(denominacionesOrdenadas) {
-        denominacionesOrdenadas.map { mutableStateOf(false) }
-    }
-    LaunchedEffect(denominacionesOrdenadas) {
-        denominacionesOrdenadas.forEachIndexed { index, _ ->
-            delay(index * 60L)
-            rowVisibility[index].value = true
-        }
-    }
-
     val totalFormateado = remember(state.total) {
         NumberFormat.getIntegerInstance().format(state.total)
     }
     val totalBills = state.cantidades.values.sumOf { it.toIntOrNull() ?: 0 }
+
+    // Animación del total (para la barra inferior)
+    val totalScale by animateFloatAsState(
+        targetValue = if (state.total > 0) 1.05f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
+        label = "total_scale_bottom"
+    )
+
+    // Estado vacío
+    val isEmpty = state.cantidades.values.all { it.toIntOrNull() == 0 || it.isEmpty() }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Calculate,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             text = stringResource(R.string.app_name),
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
-                        Text(
-                            text = stringResource(R.string.total_bills, totalBills),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(
-                            Icons.Default.Settings,
-                            contentDescription = stringResource(R.string.settings)
-                        )
+                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -135,41 +110,137 @@ fun SumadorScreen(
                     .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             )
         },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    if (settingsState.confirmClear) {
-                        showResetDialog = true
-                    } else {
-                        viewModel.resetear()
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.errorContainer,
-                contentColor = MaterialTheme.colorScheme.onErrorContainer,
-                shape = RoundedCornerShape(16.dp),
-                elevation = FloatingActionButtonDefaults.elevation(6.dp)
+        bottomBar = {
+            // Barra inferior fija con el total y botón de reinicio
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(80.dp)
+                    .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
+                color = MaterialTheme.colorScheme.surface,
+                shadowElevation = 8.dp
             ) {
-                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear_all))
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Total
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .scale(totalScale)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.total).uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            letterSpacing = 1.5.sp
+                        )
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = "$totalFormateado ",
+                                style = MaterialTheme.typography.headlineMedium.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = settingsState.currencySymbol.symbol,
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            if (totalBills > 0) {
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = "($totalBills)",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    // Botón de reinicio (en la barra inferior)
+                    FilledTonalIconButton(
+                        onClick = {
+                            if (settingsState.confirmClear) {
+                                showResetDialog = true
+                            } else {
+                                viewModel.resetear()
+                            }
+                        },
+                        colors = IconButtonDefaults.filledTonalIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer,
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
+                        ),
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear_all))
+                    }
+                }
             }
-        },
-        floatingActionButtonPosition = FabPosition.End
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 20.dp),
+                .padding(horizontal = 12.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            if (isEmpty) {
+                // Estado vacío
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.empty_state_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.empty_state_description),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+
+            // Lista de billetes con animación escalonada mejorada
             denominacionesOrdenadas.forEachIndexed { index, denom ->
+                // Animación de entrada más rápida
+                val enterTransition = fadeIn(animationSpec = tween(300, delayMillis = index * 40)) +
+                        slideInVertically(animationSpec = tween(300, delayMillis = index * 40)) { it / 3 }
+
                 AnimatedVisibility(
-                    visible = rowVisibility[index].value,
-                    enter = fadeIn(animationSpec = tween(400)) +
-                            slideInVertically(animationSpec = tween(400)) { it / 2 },
-                    exit = fadeOut(animationSpec = tween(400)) +
-                            slideOutVertically(animationSpec = tween(400)) { it / 2 }
+                    visible = true,
+                    enter = enterTransition,
+                    exit = fadeOut(animationSpec = tween(200)) +
+                            slideOutVertically(animationSpec = tween(200)) { it / 3 }
                 ) {
                     BillInputRow(
                         denomination = denom,
@@ -182,63 +253,11 @@ fun SumadorScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Tarjeta del total con gradiente
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .scale(totalScale),
-                colors = CardDefaults.cardColors(
-                    containerColor = totalColor
-                ),
-                shape = RoundedCornerShape(32.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    MaterialTheme.colorScheme.primary,
-                                    MaterialTheme.colorScheme.primaryContainer
-                                ),
-                                startY = 0f,
-                                endY = Float.POSITIVE_INFINITY
-                            )
-                        )
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = stringResource(R.string.total).uppercase(),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.7f),
-                            letterSpacing = 2.sp
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = "$totalFormateado ${settingsState.currencySymbol.symbol}",
-                            style = MaterialTheme.typography.displayMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                        if (totalBills > 0) {
-                            Text(
-                                text = stringResource(R.string.total_bills_detail, totalBills),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.6f)
-                            )
-                        }
-                    }
-                }
-            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 
+    // Diálogos
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -262,26 +281,27 @@ fun SumadorScreen(
         )
     }
 
+    // ========== AQUÍ ESTÁ EL CAMBIO PRINCIPAL ==========
     if (showSettingsDialog) {
-        SettingsDialog(
+        SettingsBottomSheet(   // ← Ahora usa el BottomSheet
             settingsState = settingsState,
             onDismiss = { showSettingsDialog = false },
-            onThemeChange = { theme ->
+            onThemeChange = { theme: ThemeOption ->
                 coroutineScope.launch { settingsViewModel.updateTheme(theme) }
             },
-            onCurrencyChange = { currency ->
+            onCurrencyChange = { currency: CurrencySymbol ->
                 coroutineScope.launch { settingsViewModel.updateCurrency(currency) }
             },
-            onSortChange = { ascending ->
+            onSortChange = { ascending: Boolean ->
                 coroutineScope.launch { settingsViewModel.updateSortOrder(ascending) }
             },
-            onAutoSaveChange = { enabled ->
+            onAutoSaveChange = { enabled: Boolean ->
                 coroutineScope.launch { settingsViewModel.updateAutoSave(enabled) }
             },
-            onConfirmClearChange = { enabled ->
+            onConfirmClearChange = { enabled: Boolean ->
                 coroutineScope.launch { settingsViewModel.updateConfirmClear(enabled) }
             },
-            onLanguageChange = { language ->
+            onLanguageChange = { language: LanguageOption ->
                 coroutineScope.launch { settingsViewModel.updateLanguage(language) }
             }
         )
@@ -303,9 +323,17 @@ fun BillInputRow(
         }
     }
 
+    // Animación de cambio de valor (pulse)
+    val scale by animateFloatAsState(
+        targetValue = if (textFieldValue.toIntOrNull() ?: 0 > 0) 1f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
+    )
+
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(scale),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
@@ -316,29 +344,40 @@ fun BillInputRow(
                 .fillMaxWidth()
                 .background(
                     color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(24.dp)
+                    shape = RoundedCornerShape(16.dp)
                 )
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Icono
-            Icon(
-                imageVector = Icons.Default.Money,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp)
-            )
-            Spacer(Modifier.width(16.dp))
+            // Denominación con ícono
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(12.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "$denomination",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = currencySymbol,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
 
-            // Denominación
-            Text(
-                text = "$denomination $currencySymbol",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f)
-            )
-
-            // Controles
+            // Controles: botón -, input, botón +
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -355,16 +394,22 @@ fun BillInputRow(
                     },
                     enabled = textFieldValue.toIntOrNull()?.let { it > 0 } ?: false,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(48.dp)
                         .background(
-                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            color = if (textFieldValue.toIntOrNull()?.let { it > 0 } == true)
+                                MaterialTheme.colorScheme.surfaceVariant
+                            else
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                             shape = RoundedCornerShape(50)
                         )
                 ) {
                     Icon(
                         Icons.Default.Remove,
                         contentDescription = "Decrementar",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = if (textFieldValue.toIntOrNull()?.let { it > 0 } == true)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
 
@@ -389,12 +434,12 @@ fun BillInputRow(
                     ),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                         focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -409,7 +454,7 @@ fun BillInputRow(
                         onValueChange(newVal)
                     },
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(48.dp)
                         .background(
                             color = MaterialTheme.colorScheme.primary,
                             shape = RoundedCornerShape(50)
