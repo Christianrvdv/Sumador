@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "SGR Turnos Bandec"
+rootProject.name = "Sumador"
 include(":app")

@@ -60,9 +60,10 @@ fun SumadorScreen(
         getDenominations(settingsState.currencySymbol)
     }
 
-    val denominacionesOrdenadas = remember(settingsState.sortAscending, settingsState.currencySymbol) {
-        if (settingsState.sortAscending) denominacionesActuales.sorted() else denominacionesActuales.sortedDescending()
-    }
+    val denominacionesOrdenadas =
+        remember(settingsState.sortAscending, settingsState.currencySymbol) {
+            if (settingsState.sortAscending) denominacionesActuales.sorted() else denominacionesActuales.sortedDescending()
+        }
 
     val totalFormateado = remember(state.total) {
         NumberFormat.getIntegerInstance().format(state.total)
@@ -100,7 +101,10 @@ fun SumadorScreen(
                 },
                 actions = {
                     IconButton(onClick = { showSettingsDialog = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
+                        Icon(
+                            Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings)
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -180,7 +184,10 @@ fun SumadorScreen(
                         ),
                         modifier = Modifier.size(56.dp)
                     ) {
-                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.clear_all))
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = stringResource(R.string.clear_all)
+                        )
                     }
                 }
             }
@@ -236,7 +243,12 @@ fun SumadorScreen(
             denominacionesOrdenadas.forEachIndexed { index, denom ->
                 // Animación de entrada más rápida
                 val enterTransition = fadeIn(animationSpec = tween(300, delayMillis = index * 40)) +
-                        slideInVertically(animationSpec = tween(300, delayMillis = index * 40)) { it / 3 }
+                        slideInVertically(
+                            animationSpec = tween(
+                                300,
+                                delayMillis = index * 40
+                            )
+                        ) { it / 3 }
 
                 AnimatedVisibility(
                     visible = true,
@@ -324,7 +336,7 @@ fun BillInputRow(
         }
     }
 
-    // Animación de cambio de valor (pulse)
+    // Animación sutil al cambiar el valor
     val scale by animateFloatAsState(
         targetValue = if (textFieldValue.toIntOrNull() ?: 0 > 0) 1f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
@@ -338,47 +350,45 @@ fun BillInputRow(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) // Sutil elevación
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(16.dp)
-                )
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Denominación con ícono
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primaryContainer,
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "$denomination",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+            // ----- Denominación con icono y símbolo -----
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Icono de billete (más pequeño y discreto)
+                Icon(
+                    Icons.Default.Money,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                    modifier = Modifier.size(24.dp)
+                )
+                // Número de la denominación (más grande y en negrita)
+                Text(
+                    text = denomination.toString(),
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                }
-                Spacer(Modifier.width(12.dp))
+                )
+                // Símbolo de la moneda (más pequeño y en color secundario)
                 Text(
                     text = currencySymbol,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
 
-            // Controles: botón -, input, botón +
+            // ----- Controles: -, input, + -----
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -395,12 +405,12 @@ fun BillInputRow(
                     },
                     enabled = textFieldValue.toIntOrNull()?.let { it > 0 } ?: false,
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(40.dp)
                         .background(
                             color = if (textFieldValue.toIntOrNull()?.let { it > 0 } == true)
                                 MaterialTheme.colorScheme.surfaceVariant
                             else
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                             shape = RoundedCornerShape(50)
                         )
                 ) {
@@ -414,11 +424,12 @@ fun BillInputRow(
                     )
                 }
 
-                // Campo de texto
+                // Campo de texto (más ancho)
                 OutlinedTextField(
                     value = textFieldValue,
                     onValueChange = { newText: String ->
-                        if (newText.all { it.isDigit() } && newText.length <= 5) {
+                        // Permitir hasta 6 dígitos (para 10000 o más)
+                        if (newText.all { it.isDigit() } && newText.length <= 6) {
                             textFieldValue = newText
                             onValueChange(newText)
                         }
@@ -426,8 +437,8 @@ fun BillInputRow(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier
-                        .width(64.dp)
-                        .padding(horizontal = 4.dp),
+                        .width(88.dp) // Más ancho
+                        .padding(horizontal = 2.dp),
                     placeholder = { Text("0") },
                     textStyle = MaterialTheme.typography.titleLarge.copy(
                         textAlign = TextAlign.Center,
@@ -440,7 +451,9 @@ fun BillInputRow(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = 0.3f
+                        ),
                         focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -455,7 +468,7 @@ fun BillInputRow(
                         onValueChange(newVal)
                     },
                     modifier = Modifier
-                        .size(48.dp)
+                        .size(40.dp)
                         .background(
                             color = MaterialTheme.colorScheme.primary,
                             shape = RoundedCornerShape(50)
