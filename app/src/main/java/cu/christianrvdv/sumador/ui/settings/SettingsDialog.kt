@@ -27,13 +27,13 @@ fun SettingsBottomSheet(
     onSortChange: (Boolean) -> Unit,
     onAutoSaveChange: (Boolean) -> Unit,
     onConfirmClearChange: (Boolean) -> Unit,
-    onLanguageChange: (LanguageOption) -> Unit
+    onLanguageChange: (LanguageOption) -> Unit,
+    onAboutClick: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
         containerColor = MaterialTheme.colorScheme.surface
-        // dragHandle se omite – usa el predeterminado (no uses BottomSheetDragHandle)
     ) {
         Column(
             modifier = Modifier
@@ -159,6 +159,20 @@ fun SettingsBottomSheet(
                 )
             }
 
+            // --- Botón "Acerca de" ---
+            TextButton(
+                onClick = onAboutClick,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                )
+            ) {
+                Icon(Icons.Default.Info, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text("Acerca de")
+            }
+
             // Botón de cierre
             Button(
                 onClick = onDismiss,
@@ -181,7 +195,7 @@ fun SettingsBottomSheet(
     }
 }
 
-// Componentes auxiliares (igual que antes)
+// Componentes auxiliares
 @Composable
 private fun SettingsSection(
     icon: ImageVector,

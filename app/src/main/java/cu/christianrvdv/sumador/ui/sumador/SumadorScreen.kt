@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cu.christianrvdv.sumador.R
 import cu.christianrvdv.sumador.ui.settings.*
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
 
@@ -47,13 +46,14 @@ fun SumadorScreen(
     val coroutineScope = rememberCoroutineScope()
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
-    // ✅ Sincronizar autoSave de manera reactiva (cada vez que cambie en settings)
+    // Sincronizar autoSave de manera reactiva
     LaunchedEffect(settingsState.autoSave) {
         viewModel.setAutoSave(settingsState.autoSave)
     }
 
-    // ✅ Sincronizar moneda de manera reactiva
+    // Sincronizar moneda de manera reactiva
     LaunchedEffect(settingsState.currencySymbol) {
         viewModel.setCurrency(settingsState.currencySymbol)
     }
@@ -72,14 +72,13 @@ fun SumadorScreen(
     }
     val totalBills = state.cantidades.values.sumOf { it.toIntOrNull() ?: 0 }
 
-    // Animación del total (para la barra inferior)
+    // Animación del total
     val totalScale by animateFloatAsState(
         targetValue = if (state.total > 0) 1.05f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
         label = "total_scale_bottom"
     )
 
-    // Estado vacío
     val isEmpty = state.cantidades.values.all { it.toIntOrNull() == 0 || it.isEmpty() }
 
     Scaffold(
@@ -102,6 +101,12 @@ fun SumadorScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = { showAboutDialog = true }) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = "Acerca de"
+                        )
+                    }
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             Icons.Default.Settings,
@@ -119,7 +124,6 @@ fun SumadorScreen(
             )
         },
         bottomBar = {
-            // Barra inferior fija con el total y botón de reinicio
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -135,7 +139,6 @@ fun SumadorScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Total
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -171,7 +174,6 @@ fun SumadorScreen(
                         }
                     }
 
-                    // Botón de reinicio (en la barra inferior)
                     FilledTonalIconButton(
                         onClick = {
                             if (settingsState.confirmClear) {
@@ -205,7 +207,6 @@ fun SumadorScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (isEmpty) {
-                // Estado vacío
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
@@ -241,9 +242,7 @@ fun SumadorScreen(
                 }
             }
 
-            // Lista de billetes con animación escalonada mejorada
             denominacionesOrdenadas.forEachIndexed { index, denom ->
-                // Animación de entrada más rápida
                 val enterTransition = fadeIn(animationSpec = tween(300, delayMillis = index * 40)) +
                         slideInVertically(
                             animationSpec = tween(
@@ -318,7 +317,17 @@ fun SumadorScreen(
             },
             onLanguageChange = { language: LanguageOption ->
                 coroutineScope.launch { settingsViewModel.updateLanguage(language) }
+            },
+            onAboutClick = {
+                showSettingsDialog = false
+                showAboutDialog = true
             }
+        )
+    }
+
+    if (showAboutDialog) {
+        AboutBottomSheet(
+            onDismiss = { showAboutDialog = false }
         )
     }
 }
@@ -338,10 +347,8 @@ fun BillInputRow(
         }
     }
 
-    // Número de billetes actual
     val billCount = textFieldValue.toIntOrNull() ?: 0
 
-    // Animación sutil al cambiar el valor (se mantiene, aunque ahora sin efecto visual)
     val scale by animateFloatAsState(
         targetValue = if (billCount > 0) 1f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
@@ -368,7 +375,6 @@ fun BillInputRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // ----- Denominación con icono y símbolo -----
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -394,7 +400,6 @@ fun BillInputRow(
                 )
             }
 
-            // ----- Controles: -, input, + -----
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -453,7 +458,9 @@ fun BillInputRow(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                            alpha = 0.3f
+                        ),
                         focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
