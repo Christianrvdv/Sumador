@@ -2,7 +2,9 @@ package cu.christianrvdv.sumador.ui.sumador
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -336,9 +338,12 @@ fun BillInputRow(
         }
     }
 
-    // Animación sutil al cambiar el valor
+    // Número de billetes actual
+    val billCount = textFieldValue.toIntOrNull() ?: 0
+
+    // Animación sutil al cambiar el valor (se mantiene, aunque ahora sin efecto visual)
     val scale by animateFloatAsState(
-        targetValue = if (textFieldValue.toIntOrNull() ?: 0 > 0) 1f else 1f,
+        targetValue = if (billCount > 0) 1f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
     )
 
@@ -350,7 +355,11 @@ fun BillInputRow(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp) // Sutil elevación
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = if (billCount > 0)
+            BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
+        else
+            null
     ) {
         Row(
             modifier = Modifier
@@ -364,14 +373,12 @@ fun BillInputRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Icono de billete (más pequeño y discreto)
                 Icon(
                     Icons.Default.Money,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                     modifier = Modifier.size(24.dp)
                 )
-                // Número de la denominación (más grande y en negrita)
                 Text(
                     text = denomination.toString(),
                     style = MaterialTheme.typography.titleLarge.copy(
@@ -379,7 +386,6 @@ fun BillInputRow(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                 )
-                // Símbolo de la moneda (más pequeño y en color secundario)
                 Text(
                     text = currencySymbol,
                     style = MaterialTheme.typography.bodyMedium.copy(
@@ -393,21 +399,19 @@ fun BillInputRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // Botón -
                 IconButton(
                     onClick = {
-                        val current = textFieldValue.toIntOrNull() ?: 0
-                        if (current > 0) {
-                            val newVal = (current - 1).toString()
+                        if (billCount > 0) {
+                            val newVal = (billCount - 1).toString()
                             textFieldValue = newVal
                             onValueChange(newVal)
                         }
                     },
-                    enabled = textFieldValue.toIntOrNull()?.let { it > 0 } ?: false,
+                    enabled = billCount > 0,
                     modifier = Modifier
                         .size(40.dp)
                         .background(
-                            color = if (textFieldValue.toIntOrNull()?.let { it > 0 } == true)
+                            color = if (billCount > 0)
                                 MaterialTheme.colorScheme.surfaceVariant
                             else
                                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -417,18 +421,16 @@ fun BillInputRow(
                     Icon(
                         Icons.Default.Remove,
                         contentDescription = "Decrementar",
-                        tint = if (textFieldValue.toIntOrNull()?.let { it > 0 } == true)
+                        tint = if (billCount > 0)
                             MaterialTheme.colorScheme.primary
                         else
                             MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
 
-                // Campo de texto (más ancho)
                 OutlinedTextField(
                     value = textFieldValue,
                     onValueChange = { newText: String ->
-                        // Permitir hasta 6 dígitos (para 10000 o más)
                         if (newText.all { it.isDigit() } && newText.length <= 6) {
                             textFieldValue = newText
                             onValueChange(newText)
@@ -437,7 +439,7 @@ fun BillInputRow(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     modifier = Modifier
-                        .width(88.dp) // Más ancho
+                        .width(88.dp)
                         .padding(horizontal = 2.dp),
                     placeholder = { Text("0") },
                     textStyle = MaterialTheme.typography.titleLarge.copy(
@@ -451,19 +453,15 @@ fun BillInputRow(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                         focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                            alpha = 0.3f
-                        ),
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
                         focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
 
-                // Botón +
                 IconButton(
                     onClick = {
-                        val current = textFieldValue.toIntOrNull() ?: 0
-                        val newVal = (current + 1).toString()
+                        val newVal = (billCount + 1).toString()
                         textFieldValue = newVal
                         onValueChange(newVal)
                     },
