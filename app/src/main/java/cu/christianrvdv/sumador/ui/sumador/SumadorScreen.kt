@@ -1,3 +1,4 @@
+// SumadorScreen.kt
 package cu.christianrvdv.sumador.ui.sumador
 
 import androidx.compose.animation.*
@@ -26,20 +27,23 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import cu.christianrvdv.sumador.R
+import cu.christianrvdv.sumador.data.database.Converters
+import cu.christianrvdv.sumador.data.database.SavedSumEntity
 import cu.christianrvdv.sumador.ui.settings.*
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SumadorScreen(
     modifier: Modifier = Modifier,
-    viewModel: SumadorViewModel = viewModel(
-        factory = SumadorViewModel.provideFactory(LocalContext.current)
-    ),
-    settingsViewModel: SettingsViewModel
+    viewModel: SumadorViewModel = hiltViewModel(),
+    settingsViewModel: SettingsViewModel,
+    onNavigateToHistory: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
@@ -47,13 +51,15 @@ fun SumadorScreen(
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
+    var showSaveDialog by remember { mutableStateOf(false) }
+    var saveName by remember { mutableStateOf("") }
 
-    // Sincronizar autoSave de manera reactiva
+    // Sincronizar autoSave
     LaunchedEffect(settingsState.autoSave) {
         viewModel.setAutoSave(settingsState.autoSave)
     }
 
-    // Sincronizar moneda de manera reactiva
+    // Sincronizar moneda
     LaunchedEffect(settingsState.currencySymbol) {
         viewModel.setCurrency(settingsState.currencySymbol)
     }
@@ -80,6 +86,7 @@ fun SumadorScreen(
     )
 
     val isEmpty = state.cantidades.values.all { it.toIntOrNull() == 0 || it.isEmpty() }
+    val hasBills = state.cantidades.values.any { it.toIntOrNull() ?: 0 > 0 }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -101,12 +108,21 @@ fun SumadorScreen(
                     }
                 },
                 actions = {
+                    // Botón Historial
+                    IconButton(onClick = onNavigateToHistory) {
+                        Icon(
+                            Icons.Default.History,
+                            contentDescription = "Historial"
+                        )
+                    }
+                    // Botón Acerca de
                     IconButton(onClick = { showAboutDialog = true }) {
                         Icon(
                             Icons.Default.Info,
                             contentDescription = stringResource(R.string.content_description_about)
                         )
                     }
+                    // Botón Configuración
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             Icons.Default.Settings,
@@ -195,6 +211,17 @@ fun SumadorScreen(
                     }
                 }
             }
+        },
+        floatingActionButton = {
+            if (hasBills) {
+                FloatingActionButton(
+                    onClick = { showSaveDialog = true },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = stringResource(R.string.save_sum))
+                }
+            }
         }
     ) { innerPadding ->
         Column(
@@ -272,7 +299,7 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogos
+    // Diálogo de confirmación de reset
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -296,6 +323,60 @@ fun SumadorScreen(
         )
     }
 
+    // Diálogo de guardar suma
+    if (showSaveDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showSaveDialog = false
+                saveName = ""
+            },
+            title = { Text(stringResource(R.string.save_sum)) },
+            text = {
+                Column {
+                    Text("Introduce un nombre para esta suma:")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = saveName,
+                        onValueChange = { saveName = it },
+                        placeholder = { Text(stringResource(R.string.save_sum_name_hint)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val finalName = if (saveName.isNotBlank()) saveName else {
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                            dateFormat.format(Date())
+                        }
+                        // Construir mapa de denominaciones con cantidades (Int)
+                        val denominationsMap = state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
+                        viewModel.saveCurrentSum(
+                            name = finalName,
+                            total = state.total,
+                            denominationsMap = denominationsMap
+                        )
+                        showSaveDialog = false
+                        saveName = ""
+                    }
+                ) {
+                    Text(stringResource(R.string.save_sum))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showSaveDialog = false
+                    saveName = ""
+                }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    // Diálogo de configuración
     if (showSettingsDialog) {
         SettingsBottomSheet(
             settingsState = settingsState,
@@ -325,6 +406,7 @@ fun SumadorScreen(
         )
     }
 
+    // Diálogo Acerca de
     if (showAboutDialog) {
         AboutBottomSheet(
             onDismiss = { showAboutDialog = false }

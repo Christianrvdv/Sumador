@@ -1,3 +1,4 @@
+// MainActivity.kt
 package cu.christianrvdv.sumador
 
 import android.content.Context
@@ -13,14 +14,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import cu.christianrvdv.sumador.ui.history.SavedSumsScreen
 import cu.christianrvdv.sumador.ui.settings.LanguageOption
 import cu.christianrvdv.sumador.ui.settings.SettingsViewModel
 import cu.christianrvdv.sumador.ui.settings.ThemeOption
 import cu.christianrvdv.sumador.ui.sumador.SumadorScreen
 import cu.christianrvdv.sumador.ui.theme.SumadorTheme
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.Locale
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,17 +53,29 @@ class MainActivity : ComponentActivity() {
                 ThemeOption.SYSTEM -> null
             }
 
-            // Forzar recomposición completa al cambiar el idioma (opcional, pero lo mantenemos)
+            val navController = rememberNavController()
+
+            // Forzar recomposición completa al cambiar el idioma
             key(settingsState.language) {
                 SumadorTheme(
                     darkTheme = useDarkTheme,
                     dynamicColor = settingsState.theme == ThemeOption.SYSTEM
                 ) {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        SumadorScreen(
-                            modifier = Modifier.padding(innerPadding),
-                            settingsViewModel = settingsViewModel
-                        )
+                    NavHost(navController, startDestination = "sumador") {
+                        composable("sumador") {
+                            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                                SumadorScreen(
+                                    modifier = Modifier.padding(innerPadding),
+                                    settingsViewModel = settingsViewModel,
+                                    onNavigateToHistory = { navController.navigate("history") }
+                                )
+                            }
+                        }
+                        composable("history") {
+                            SavedSumsScreen(
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
                     }
                 }
             }

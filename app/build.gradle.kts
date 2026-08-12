@@ -99,11 +99,6 @@ dependencies {
     // ========== Hilt Work (para Workers) ==========
     implementation(libs.hilt.work)
 
-    // ========== Dagger (solo el núcleo y el compilador) ==========
-    // AssistedInject ya viene incluido en dagger desde la versión 2.31
-    implementation(libs.dagger)
-    ksp(libs.dagger.compiler)
-
     // Security (EncryptedSharedPreferences)
     implementation(libs.androidx.security.crypto)
 

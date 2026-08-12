@@ -78,4 +78,12 @@
     <string name="confirm_clear_description">Ask for confirmation before clearing</string>
     <string name="settings_about_button">About</string>
     <string name="settings_done_button">Done</string>
+
+
+    <!-- History -->
+    <string name="history_title">Saved Sums</string>
+    <string name="history_empty">No saved sums yet</string>
+    <string name="save_sum">Save sum</string>
+    <string name="save_sum_name_hint">Name (optional)</string>
+    <string name="save_sum_name_default">Sum %s</string>
 </resources>

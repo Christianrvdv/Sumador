@@ -78,4 +78,11 @@
     <string name="confirm_clear_description">Pide confirmación antes de limpiar</string>
     <string name="settings_about_button">Acerca de</string>
     <string name="settings_done_button">Listo</string>
+
+    <!-- History -->
+    <string name="history_title">Sumas guardadas</string>
+    <string name="history_empty">Aún no hay sumas guardadas</string>
+    <string name="save_sum">Guardar suma</string>
+    <string name="save_sum_name_hint">Nombre (opcional)</string>
+    <string name="save_sum_name_default">Suma %s</string>
 </resources>

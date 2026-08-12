@@ -6,19 +6,29 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import cu.christianrvdv.sumador.data.database.Converters
+import cu.christianrvdv.sumador.data.database.SavedSumDao
+import cu.christianrvdv.sumador.data.database.SavedSumEntity
 import cu.christianrvdv.sumador.ui.settings.CurrencySymbol
-import kotlinx.coroutines.flow.first
+import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.Date
+import javax.inject.Inject
 
 private val Context.sumadorDataStore by preferencesDataStore(name = "sumador_state")
 
-class SumadorViewModel(private val context: Context) : ViewModel() {
+@HiltViewModel
+class SumadorViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
+    private val savedSumDao: SavedSumDao
+) : ViewModel() {
 
     // Mapa mutable de cantidades para la moneda actual
     private val _cantidades = mutableStateMapOf<Int, String>()
@@ -122,11 +132,21 @@ class SumadorViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    companion object {
-        fun provideFactory(context: Context): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return SumadorViewModel(context) as T
+    /**
+     * Guarda la suma actual en la base de datos Room.
+     */
+    fun saveCurrentSum(name: String, total: Long, denominationsMap: Map<Int, Int>) {
+        viewModelScope.launch {
+            try {
+                val entity = SavedSumEntity(
+                    name = name,
+                    timestamp = Date(),
+                    total = total,
+                    denominationsMap = Converters().fromMapToString(denominationsMap)
+                )
+                savedSumDao.insert(entity)
+            } catch (e: Exception) {
+                Log.e("SumadorViewModel", "Error saving sum", e)
             }
         }
     }
