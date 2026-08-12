@@ -3,6 +3,7 @@ package cu.christianrvdv.sumador
 import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -44,7 +45,7 @@ class MainActivity : ComponentActivity() {
                 ThemeOption.SYSTEM -> null
             }
 
-            // Forzar recomposición completa al cambiar el idioma (opcional)
+            // Forzar recomposición completa al cambiar el idioma (opcional, pero lo mantenemos)
             key(settingsState.language) {
                 SumadorTheme(
                     darkTheme = useDarkTheme,
@@ -63,18 +64,37 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Aplica el idioma seleccionado a la configuración de recursos de la app.
+     * Si el idioma cambia, recrea la actividad para que los cambios surtan efecto.
      */
     private fun applyLanguage(language: LanguageOption) {
-        val locale = when (language) {
+        val desiredLocale = when (language) {
             LanguageOption.ENGLISH -> Locale.ENGLISH
             LanguageOption.SPANISH -> Locale("es")
             LanguageOption.SYSTEM -> Locale.getDefault()
         }
-        if (language != LanguageOption.SYSTEM) {
-            Locale.setDefault(locale)
+
+        // Obtener el locale actual de la configuración de recursos
+        val currentLocale = resources.configuration.locales[0] ?: Locale.getDefault()
+
+        // Si el locale deseado ya está aplicado, no hacer nada
+        if (currentLocale == desiredLocale) {
+            Log.d("MainActivity", "Idioma ya aplicado: $desiredLocale")
+            return
         }
-        val config = resources.configuration
-        config.setLocale(locale)
+
+        Log.d("MainActivity", "Aplicando idioma: $language -> locale: $desiredLocale")
+
+        // Establecer el locale por defecto (para formateo, etc.)
+        if (language != LanguageOption.SYSTEM) {
+            Locale.setDefault(desiredLocale)
+        }
+
+        // Actualizar la configuración de recursos
+        val config = Configuration(resources.configuration)
+        config.setLocale(desiredLocale)
         resources.updateConfiguration(config, resources.displayMetrics)
+
+        // Forzar el recreado de la actividad para que todos los recursos se recarguen
+        recreate()
     }
 }
