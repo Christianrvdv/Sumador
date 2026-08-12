@@ -347,8 +347,15 @@ fun SumadorScreen(
             },
             title = { Text(stringResource(R.string.save_sum)) },
             text = {
-                Column {
-                    Text("Introduce un nombre para esta suma:")
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = "Introduce un nombre para esta suma:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
                         value = saveName,
@@ -357,6 +364,82 @@ fun SumadorScreen(
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Resumen de denominaciones
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp)
+                        ) {
+                            Text(
+                                text = "Resumen:",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Filtrar solo denominaciones con cantidad > 0
+                            val items = state.cantidades
+                                .filter { it.value.toIntOrNull() ?: 0 > 0 }
+                                .toList()
+                                .sortedByDescending { (denom, _) -> denom }
+
+                            if (items.isEmpty()) {
+                                Text(
+                                    text = "No hay billetes seleccionados.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                items.forEach { (denom, cantidadStr) ->
+                                    val cantidad = cantidadStr.toIntOrNull() ?: 0
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
+                                        Text(
+                                            text = "$denom ${settingsState.currencySymbol.symbol}",
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = "x $cantidad",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                                Divider(
+                                    modifier = Modifier.padding(vertical = 4.dp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        text = "Total:",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "${NumberFormat.getIntegerInstance().format(state.total)} ${settingsState.currencySymbol.symbol}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
@@ -366,7 +449,6 @@ fun SumadorScreen(
                             val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                             dateFormat.format(Date())
                         }
-                        // Construir mapa de denominaciones con cantidades (Int)
                         val denominationsMap = state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
                         viewModel.saveCurrentSum(
                             name = finalName,
