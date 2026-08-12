@@ -28,7 +28,7 @@ fun AboutBottomSheet(
     val versionName = try {
         context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
     } catch (_: PackageManager.NameNotFoundException) {
-        "1.1.0"
+        "1.2.0"
     }
 
     ModalBottomSheet(
