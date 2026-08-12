@@ -80,11 +80,14 @@ fun SavedSumsScreen(
         }
     }
 
-    // Diálogo de detalle
+    // Diálogo de detalle con edición
     selectedSum?.let { sum ->
         SavedSumDetailDialog(
             savedSum = sum,
-            onDismiss = { selectedSum = null }
+            onDismiss = { selectedSum = null },
+            onUpdateName = { newName ->
+                viewModel.update(sum.copy(name = newName))
+            }
         )
     }
 }
@@ -127,7 +130,7 @@ fun SavedSumItem(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "${sum.total} ${CurrencySymbol.PESO.symbol}", // Podríamos pasar el símbolo desde settings
+                    text = "${sum.total} ${CurrencySymbol.PESO.symbol}",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -145,15 +148,30 @@ fun SavedSumItem(
 @Composable
 fun SavedSumDetailDialog(
     savedSum: SavedSumEntity,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onUpdateName: (String) -> Unit
 ) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-    val denominations = savedSum.denominationsMap
-        .let { Converters().fromStringToMap(it) } // Necesitamos acceso al convertidor
+    val denominations = Converters().fromStringToMap(savedSum.denominationsMap)
+
+    var isEditing by remember { mutableStateOf(false) }
+    var editedName by remember(savedSum) { mutableStateOf(savedSum.name) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = savedSum.name) },
+        title = {
+            if (isEditing) {
+                TextField(
+                    value = editedName,
+                    onValueChange = { editedName = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Nombre") },
+                    singleLine = true
+                )
+            } else {
+                Text(text = savedSum.name)
+            }
+        },
         text = {
             Column {
                 Text(text = "Fecha: ${dateFormat.format(savedSum.timestamp)}")
@@ -169,8 +187,32 @@ fun SavedSumDetailDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+            if (isEditing) {
+                TextButton(
+                    onClick = {
+                        if (editedName.isNotBlank()) {
+                            onUpdateName(editedName)
+                            isEditing = false
+                        }
+                    }
+                ) {
+                    Text("Guardar")
+                }
+            } else {
+                TextButton(onClick = { onDismiss() }) {
+                    Text("Cerrar")
+                }
+            }
+        },
+        dismissButton = {
+            if (isEditing) {
+                TextButton(onClick = { isEditing = false }) {
+                    Text("Cancelar")
+                }
+            } else {
+                TextButton(onClick = { isEditing = true }) {
+                    Text("Editar")
+                }
             }
         }
     )

@@ -6,12 +6,16 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SavedSumDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(savedSum: SavedSumEntity)
+
+    @Update
+    suspend fun update(savedSum: SavedSumEntity)
 
     @Delete
     suspend fun delete(savedSum: SavedSumEntity)

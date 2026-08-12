@@ -23,6 +23,12 @@ class SavedSumsViewModel @Inject constructor(
         }
     }
 
+    fun update(savedSum: SavedSumEntity) {
+        viewModelScope.launch {
+            savedSumDao.update(savedSum)
+        }
+    }
+
     fun delete(savedSum: SavedSumEntity) {
         viewModelScope.launch {
             savedSumDao.delete(savedSum)
