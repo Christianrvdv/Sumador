@@ -63,13 +63,11 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(navController, startDestination = "sumador") {
                         composable("sumador") {
-                            Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                                SumadorScreen(
-                                    modifier = Modifier.padding(innerPadding),
-                                    settingsViewModel = settingsViewModel,
-                                    onNavigateToHistory = { navController.navigate("history") }
-                                )
-                            }
+                            // Sin Scaffold externo: SumadorScreen maneja su propio Scaffold
+                            SumadorScreen(
+                                settingsViewModel = settingsViewModel,
+                                onNavigateToHistory = { navController.navigate("history") }
+                            )
                         }
                         composable("history") {
                             SavedSumsScreen(

@@ -143,95 +143,101 @@ fun SumadorScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
                     .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)),
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 8.dp
             ) {
-                Row(
+                Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                        .fillMaxWidth()
+                        .navigationBarsPadding() // Espacio para la barra de navegación
                 ) {
-                    // Columna del total
-                    Column(
+                    Row(
                         modifier = Modifier
-                            .weight(1f)
-                            .scale(totalScale)
+                            .fillMaxWidth()
+                            .height(80.dp) // Altura visible del bottomBar
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = stringResource(R.string.total).uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            letterSpacing = 1.5.sp
-                        )
-                        Row(verticalAlignment = Alignment.Bottom) {
+                        // Columna del total
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .scale(totalScale)
+                        ) {
                             Text(
-                                text = "$totalFormateado ",
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                color = MaterialTheme.colorScheme.primary
+                                text = stringResource(R.string.total).uppercase(),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                letterSpacing = 1.5.sp
                             )
-                            Text(
-                                text = settingsState.currencySymbol.symbol,
-                                style = MaterialTheme.typography.titleLarge,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            if (totalBills > 0) {
-                                Spacer(Modifier.width(8.dp))
+                            Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
-                                    text = stringResource(R.string.total_bills_short, totalBills),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    text = "$totalFormateado ",
+                                    style = MaterialTheme.typography.headlineMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary
                                 )
+                                Text(
+                                    text = settingsState.currencySymbol.symbol,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                if (totalBills > 0) {
+                                    Spacer(Modifier.width(8.dp))
+                                    Text(
+                                        text = stringResource(R.string.total_bills_short, totalBills),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
-                    }
 
-                    // Botones agrupados a la derecha
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Botón Guardar (solo si hay billetes)
-                        if (hasBills) {
+                        // Botones agrupados a la derecha
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Botón Guardar (solo si hay billetes)
+                            if (hasBills) {
+                                FilledTonalIconButton(
+                                    onClick = { showSaveDialog = true },
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    ),
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Save,
+                                        contentDescription = stringResource(R.string.save_sum)
+                                    )
+                                }
+                            }
+
+                            // Botón Limpiar (siempre visible)
                             FilledTonalIconButton(
-                                onClick = { showSaveDialog = true },
+                                onClick = {
+                                    if (settingsState.confirmClear) {
+                                        showResetDialog = true
+                                    } else {
+                                        viewModel.resetear()
+                                    }
+                                },
                                 colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer
                                 ),
                                 modifier = Modifier.size(56.dp)
                             ) {
                                 Icon(
-                                    Icons.Default.Save,
-                                    contentDescription = stringResource(R.string.save_sum)
+                                    Icons.Default.Delete,
+                                    contentDescription = stringResource(R.string.clear_all)
                                 )
                             }
-                        }
-
-                        // Botón Limpiar (siempre visible)
-                        FilledTonalIconButton(
-                            onClick = {
-                                if (settingsState.confirmClear) {
-                                    showResetDialog = true
-                                } else {
-                                    viewModel.resetear()
-                                }
-                            },
-                            colors = IconButtonDefaults.filledTonalIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.errorContainer,
-                                contentColor = MaterialTheme.colorScheme.onErrorContainer
-                            ),
-                            modifier = Modifier.size(56.dp)
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.clear_all)
-                            )
                         }
                     }
                 }
