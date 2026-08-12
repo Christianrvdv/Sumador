@@ -171,8 +171,7 @@ fun SavedSumDetailBottomSheet(
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val denominations = Converters().fromStringToMap(savedSum.denominationsMap)
 
-    var isEditing by remember { mutableStateOf(false) }
-    var editedName by remember(savedSum) { mutableStateOf(savedSum.name) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -187,29 +186,13 @@ fun SavedSumDetailBottomSheet(
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Título (editable)
-            if (isEditing) {
-                TextField(
-                    value = editedName,
-                    onValueChange = { editedName = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text(stringResource(R.string.name_label)) },
-                    singleLine = true,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    )
-                )
-            } else {
-                Text(
-                    text = savedSum.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-            }
+            // Título (no editable)
+            Text(
+                text = savedSum.name,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
 
             // Fecha y total
             Card(
@@ -284,58 +267,78 @@ fun SavedSumDetailBottomSheet(
 
             Spacer(Modifier.height(4.dp))
 
-            // Botones de acción
+            // Botones de acción (solo modo visualización)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (isEditing) {
-                    // Modo edición: Guardar y Cancelar
-                    Button(
-                        onClick = {
-                            if (editedName.isNotBlank()) {
-                                onUpdateName(editedName)
-                                isEditing = false
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        Text(stringResource(R.string.save_button))
-                    }
-                    TextButton(
-                        onClick = { isEditing = false },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(stringResource(R.string.cancel_button))
-                    }
-                } else {
-                    // Modo visualización: Cerrar y Editar
-                    Button(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    ) {
-                        Text(stringResource(R.string.close_button))
-                    }
-                    TextButton(
-                        onClick = { isEditing = true },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(stringResource(R.string.edit_button))
-                    }
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(stringResource(R.string.close_button))
+                }
+                TextButton(
+                    onClick = { showEditDialog = true },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(stringResource(R.string.edit_button))
                 }
             }
         }
+    }
+
+    // Diálogo de edición de nombre
+    if (showEditDialog) {
+        var editedName by remember { mutableStateOf(savedSum.name) }
+
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text(stringResource(R.string.edit_name_title)) },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = stringResource(R.string.edit_name_message),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = editedName,
+                        onValueChange = { editedName = it },
+                        label = { Text(stringResource(R.string.name_label)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (editedName.isNotBlank()) {
+                            onUpdateName(editedName)
+                            showEditDialog = false
+                            onDismiss() // Cierra también el bottom sheet después de editar
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.save_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text(stringResource(R.string.cancel_button))
+                }
+            }
+        )
     }
 }

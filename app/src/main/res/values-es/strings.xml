@@ -95,4 +95,7 @@
     <string name="cancel_button">Cancelar</string>
     <string name="close_button">Cerrar</string>
     <string name="edit_button">Editar</string>
+
+    <string name="edit_name_title">Editar nombre</string>
+    <string name="edit_name_message">Introduce el nuevo nombre para esta suma guardada:</string>
 </resources>

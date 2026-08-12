@@ -95,4 +95,7 @@
     <string name="cancel_button">Cancel</string>
     <string name="close_button">Close</string>
     <string name="edit_button">Edit</string>
+
+    <string name="edit_name_title">Edit name</string>
+    <string name="edit_name_message">Enter the new name for this saved sum:</string>
 </resources>
