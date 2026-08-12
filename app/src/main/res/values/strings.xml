@@ -86,4 +86,13 @@
     <string name="save_sum">Save sum</string>
     <string name="save_sum_name_hint">Name (optional)</string>
     <string name="save_sum_name_default">Sum %s</string>
+
+    <string name="name_label">Name</string>
+    <string name="date_label">Date: %s</string>
+    <string name="total_label">Total: %s</string>
+    <string name="detail_label">Detail</string>
+    <string name="save_button">Save</string>
+    <string name="cancel_button">Cancel</string>
+    <string name="close_button">Close</string>
+    <string name="edit_button">Edit</string>
 </resources>

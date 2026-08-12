@@ -4,9 +4,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -80,9 +83,9 @@ fun SavedSumsScreen(
         }
     }
 
-    // Diálogo de detalle con edición
+    // Diálogo de detalle como ModalBottomSheet
     selectedSum?.let { sum ->
-        SavedSumDetailDialog(
+        SavedSumDetailBottomSheet(
             savedSum = sum,
             onDismiss = { selectedSum = null },
             onUpdateName = { newName ->
@@ -146,7 +149,7 @@ fun SavedSumItem(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SavedSumDetailDialog(
+fun SavedSumDetailBottomSheet(
     savedSum: SavedSumEntity,
     onDismiss: () -> Unit,
     onUpdateName: (String) -> Unit
@@ -157,63 +160,168 @@ fun SavedSumDetailDialog(
     var isEditing by remember { mutableStateOf(false) }
     var editedName by remember(savedSum) { mutableStateOf(savedSum.name) }
 
-    AlertDialog(
+    ModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = {
+        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Título (editable)
             if (isEditing) {
                 TextField(
                     value = editedName,
                     onValueChange = { editedName = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Nombre") },
-                    singleLine = true
+                    label = { Text(stringResource(R.string.name_label)) },
+                    singleLine = true,
+                    colors = TextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    )
                 )
             } else {
-                Text(text = savedSum.name)
+                Text(
+                    text = savedSum.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             }
-        },
-        text = {
-            Column {
-                Text(text = "Fecha: ${dateFormat.format(savedSum.timestamp)}")
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Total: ${savedSum.total} ${CurrencySymbol.PESO.symbol}")
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "Detalle:", fontWeight = FontWeight.Bold)
-                denominations.entries.sortedBy { it.key }.forEach { (denom, count) ->
-                    if (count > 0) {
-                        Text(text = "$denom x $count = ${denom * count}")
-                    }
+
+            // Fecha y total
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.date_label, dateFormat.format(savedSum.timestamp)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.total_label, "${savedSum.total} ${CurrencySymbol.PESO.symbol}"),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
                 }
             }
-        },
-        confirmButton = {
-            if (isEditing) {
-                TextButton(
-                    onClick = {
-                        if (editedName.isNotBlank()) {
-                            onUpdateName(editedName)
-                            isEditing = false
+
+            // Detalle de denominaciones
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.detail_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    denominations.entries.sortedBy { it.key }.forEach { (denom, count) ->
+                        if (count > 0) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "$denom x $count",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "= ${denom * count}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
                     }
-                ) {
-                    Text("Guardar")
-                }
-            } else {
-                TextButton(onClick = { onDismiss() }) {
-                    Text("Cerrar")
                 }
             }
-        },
-        dismissButton = {
-            if (isEditing) {
-                TextButton(onClick = { isEditing = false }) {
-                    Text("Cancelar")
-                }
-            } else {
-                TextButton(onClick = { isEditing = true }) {
-                    Text("Editar")
+
+            Spacer(Modifier.height(4.dp))
+
+            // Botones de acción
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (isEditing) {
+                    // Modo edición: Guardar y Cancelar
+                    Button(
+                        onClick = {
+                            if (editedName.isNotBlank()) {
+                                onUpdateName(editedName)
+                                isEditing = false
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(stringResource(R.string.save_button))
+                    }
+                    TextButton(
+                        onClick = { isEditing = false },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(stringResource(R.string.cancel_button))
+                    }
+                } else {
+                    // Modo visualización: Cerrar y Editar
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text(stringResource(R.string.close_button))
+                    }
+                    TextButton(
+                        onClick = { isEditing = true },
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(stringResource(R.string.edit_button))
+                    }
                 }
             }
         }
-    )
+    }
 }
