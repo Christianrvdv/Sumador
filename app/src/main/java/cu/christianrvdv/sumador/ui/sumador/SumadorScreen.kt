@@ -155,6 +155,7 @@ fun SumadorScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Columna del total
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -190,39 +191,53 @@ fun SumadorScreen(
                         }
                     }
 
-                    FilledTonalIconButton(
-                        onClick = {
-                            if (settingsState.confirmClear) {
-                                showResetDialog = true
-                            } else {
-                                viewModel.resetear()
-                            }
-                        },
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        ),
-                        modifier = Modifier.size(56.dp)
+                    // Botones agrupados a la derecha
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = stringResource(R.string.clear_all)
-                        )
+                        // Botón Guardar (solo si hay billetes)
+                        if (hasBills) {
+                            FilledTonalIconButton(
+                                onClick = { showSaveDialog = true },
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                ),
+                                modifier = Modifier.size(56.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Save,
+                                    contentDescription = stringResource(R.string.save_sum)
+                                )
+                            }
+                        }
+
+                        // Botón Limpiar (siempre visible)
+                        FilledTonalIconButton(
+                            onClick = {
+                                if (settingsState.confirmClear) {
+                                    showResetDialog = true
+                                } else {
+                                    viewModel.resetear()
+                                }
+                            },
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            ),
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = stringResource(R.string.clear_all)
+                            )
+                        }
                     }
                 }
             }
         },
-        floatingActionButton = {
-            if (hasBills) {
-                FloatingActionButton(
-                    onClick = { showSaveDialog = true },
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                ) {
-                    Icon(Icons.Default.Save, contentDescription = stringResource(R.string.save_sum))
-                }
-            }
-        }
+        // Se eliminó el floatingActionButton
     ) { innerPadding ->
         Column(
             modifier = Modifier
