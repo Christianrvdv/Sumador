@@ -1,6 +1,7 @@
 // ui/history/SavedSumsScreen.kt
 package cu.christianrvdv.sumador.ui.history
 
+import android.app.DatePickerDialog
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -20,6 +22,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cu.christianrvdv.sumador.R
@@ -38,22 +41,53 @@ fun SavedSumsScreen(
     viewModel: SavedSumsViewModel = hiltViewModel()
 ) {
     val savedSums by viewModel.allSavedSums.collectAsState(initial = emptyList())
+    val filterState by viewModel.filterState.collectAsState()
     var selectedSum by remember { mutableStateOf<SavedSumEntity?>(null) }
 
     var searchText by remember { mutableStateOf("") }
     var showFilterDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    // Estados locales para el diálogo de filtros (en unidad principal)
+    var localDateFrom by remember { mutableStateOf<Long?>(null) }
+    var localDateTo by remember { mutableStateOf<Long?>(null) }
+    var localTotalMinStr by remember { mutableStateOf<String?>(null) } // en unidad principal, ej "60000.50"
+    var localTotalMaxStr by remember { mutableStateOf<String?>(null) }
+
+    // Cargar valores actuales al abrir el diálogo (convertir de céntimos a unidad principal)
+    LaunchedEffect(showFilterDialog) {
+        if (showFilterDialog) {
+            localDateFrom = filterState.dateFrom
+            localDateTo = filterState.dateTo
+            localTotalMinStr = filterState.totalMin?.let { cents ->
+                // Convertir céntimos a unidad principal con dos decimales
+                val value = cents.toDouble() / 100.0
+                if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(value)
+            }
+            localTotalMaxStr = filterState.totalMax?.let { cents ->
+                val value = cents.toDouble() / 100.0
+                if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(value)
+            }
+        }
+    }
+
+    // Aplicar filtro de nombre, manteniendo los otros filtros (que ya están en filterState)
     LaunchedEffect(searchText) {
         val name = if (searchText.isBlank()) null else searchText
         viewModel.setFilter(
             name = name,
-            dateFrom = null,
-            dateTo = null,
-            totalMin = null,
-            totalMax = null
+            dateFrom = filterState.dateFrom,
+            dateTo = filterState.dateTo,
+            totalMin = filterState.totalMin,
+            totalMax = filterState.totalMax
         )
     }
+
+    // Determinar si hay filtros activos (distintos del nombre)
+    val hasActiveFilters = filterState.dateFrom != null ||
+            filterState.dateTo != null ||
+            filterState.totalMin != null ||
+            filterState.totalMax != null
 
     Scaffold(
         topBar = {
@@ -77,8 +111,16 @@ fun SavedSumsScreen(
                     }) {
                         Icon(Icons.Default.Clear, contentDescription = "Clear filters")
                     }
-                    IconButton(onClick = { showFilterDialog = true }) {
-                        Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                    BadgedBox(
+                        badge = {
+                            if (hasActiveFilters) {
+                                Badge { Text("•") }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = { showFilterDialog = true }) {
+                            Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -137,19 +179,48 @@ fun SavedSumsScreen(
         }
     }
 
+    // Diálogo de filtros avanzados
     if (showFilterDialog) {
-        AlertDialog(
-            onDismissRequest = { showFilterDialog = false },
-            title = { Text("Filtros avanzados") },
-            text = { Text("Implementación pendiente (fechas y totales)") },
-            confirmButton = {
-                TextButton(onClick = { showFilterDialog = false }) {
-                    Text("Cerrar")
+        FilterDialog(
+            dateFrom = localDateFrom,
+            dateTo = localDateTo,
+            totalMinStr = localTotalMinStr,
+            totalMaxStr = localTotalMaxStr,
+            onDateFromChange = { localDateFrom = it },
+            onDateToChange = { localDateTo = it },
+            onTotalMinStrChange = { localTotalMinStr = it },
+            onTotalMaxStrChange = { localTotalMaxStr = it },
+            onApply = {
+                // Convertir de unidad principal a céntimos
+                val totalMinCents = localTotalMinStr?.let { str ->
+                    try {
+                        (str.replace(',', '.').toDouble() * 100).toLong()
+                    } catch (_: NumberFormatException) { null }
                 }
-            }
+                val totalMaxCents = localTotalMaxStr?.let { str ->
+                    try {
+                        (str.replace(',', '.').toDouble() * 100).toLong()
+                    } catch (_: NumberFormatException) { null }
+                }
+                viewModel.setFilter(
+                    name = if (searchText.isBlank()) null else searchText,
+                    dateFrom = localDateFrom,
+                    dateTo = localDateTo,
+                    totalMin = totalMinCents,
+                    totalMax = totalMaxCents
+                )
+                showFilterDialog = false
+            },
+            onClear = {
+                viewModel.clearFilters()
+                searchText = ""
+                showFilterDialog = false
+            },
+            onDismiss = { showFilterDialog = false }
         )
     }
 
+    // BottomSheet para detalle de una suma guardada
     selectedSum?.let { sum ->
         SavedSumDetailBottomSheet(
             savedSum = sum,
@@ -161,6 +232,216 @@ fun SavedSumsScreen(
         )
     }
 }
+
+// ===== DIÁLOGO DE FILTROS =====
+@Composable
+private fun FilterDialog(
+    dateFrom: Long?,
+    dateTo: Long?,
+    totalMinStr: String?,
+    totalMaxStr: String?,
+    onDateFromChange: (Long?) -> Unit,
+    onDateToChange: (Long?) -> Unit,
+    onTotalMinStrChange: (String?) -> Unit,
+    onTotalMaxStrChange: (String?) -> Unit,
+    onApply: () -> Unit,
+    onClear: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Filtros avanzados") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Fecha desde
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Desde:", modifier = Modifier.weight(0.3f))
+                    OutlinedTextField(
+                        value = dateFrom?.let { dateFormat.format(Date(it)) } ?: "",
+                        onValueChange = { /* Solo lectura, se usa el DatePicker */ },
+                        readOnly = true,
+                        modifier = Modifier.weight(0.5f),
+                        placeholder = { Text("dd/mm/aaaa") },
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                val calendar = Calendar.getInstance()
+                                dateFrom?.let { calendar.timeInMillis = it }
+                                DatePickerDialog(
+                                    context,
+                                    { _, year, month, dayOfMonth ->
+                                        val selected = Calendar.getInstance().apply {
+                                            set(year, month, dayOfMonth)
+                                            set(Calendar.HOUR_OF_DAY, 0)
+                                            set(Calendar.MINUTE, 0)
+                                            set(Calendar.SECOND, 0)
+                                            set(Calendar.MILLISECOND, 0)
+                                        }.timeInMillis
+                                        onDateFromChange(selected)
+                                    },
+                                    calendar.get(Calendar.YEAR),
+                                    calendar.get(Calendar.MONTH),
+                                    calendar.get(Calendar.DAY_OF_MONTH)
+                                ).show()
+                            }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
+                            }
+                        }
+                    )
+                    IconButton(onClick = { onDateFromChange(null) }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
+                    }
+                }
+
+                // Fecha hasta
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Hasta:", modifier = Modifier.weight(0.3f))
+                    OutlinedTextField(
+                        value = dateTo?.let { dateFormat.format(Date(it)) } ?: "",
+                        onValueChange = { /* Solo lectura */ },
+                        readOnly = true,
+                        modifier = Modifier.weight(0.5f),
+                        placeholder = { Text("dd/mm/aaaa") },
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                val calendar = Calendar.getInstance()
+                                dateTo?.let { calendar.timeInMillis = it }
+                                DatePickerDialog(
+                                    context,
+                                    { _, year, month, dayOfMonth ->
+                                        val selected = Calendar.getInstance().apply {
+                                            set(year, month, dayOfMonth)
+                                            set(Calendar.HOUR_OF_DAY, 23)
+                                            set(Calendar.MINUTE, 59)
+                                            set(Calendar.SECOND, 59)
+                                            set(Calendar.MILLISECOND, 999)
+                                        }.timeInMillis
+                                        onDateToChange(selected)
+                                    },
+                                    calendar.get(Calendar.YEAR),
+                                    calendar.get(Calendar.MONTH),
+                                    calendar.get(Calendar.DAY_OF_MONTH)
+                                ).show()
+                            }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
+                            }
+                        }
+                    )
+                    IconButton(onClick = { onDateToChange(null) }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
+                    }
+                }
+
+                Divider()
+
+                // Total mínimo (permite decimales)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Mínimo:", modifier = Modifier.weight(0.3f))
+                    OutlinedTextField(
+                        value = totalMinStr ?: "",
+                        onValueChange = { newValue ->
+                            // Permitir solo dígitos, punto o coma (como separador decimal)
+                            val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+                            // Evitar múltiples puntos/comas
+                            val valid = filtered.replace(',', '.')
+                                .let { str ->
+                                    val parts = str.split('.')
+                                    parts.size <= 2 && parts.all { it.all { c -> c.isDigit() } }
+                                }
+                            if (valid) {
+                                onTotalMinStrChange(filtered.ifEmpty { null })
+                            }
+                        },
+                        modifier = Modifier.weight(0.5f),
+                        placeholder = { Text("0") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                    IconButton(onClick = { onTotalMinStrChange(null) }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
+                    }
+                }
+
+                // Total máximo (permite decimales)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Máximo:", modifier = Modifier.weight(0.3f))
+                    OutlinedTextField(
+                        value = totalMaxStr ?: "",
+                        onValueChange = { newValue ->
+                            val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+                            val valid = filtered.replace(',', '.')
+                                .let { str ->
+                                    val parts = str.split('.')
+                                    parts.size <= 2 && parts.all { it.all { c -> c.isDigit() } }
+                                }
+                            if (valid) {
+                                onTotalMaxStrChange(filtered.ifEmpty { null })
+                            }
+                        },
+                        modifier = Modifier.weight(0.5f),
+                        placeholder = { Text("0") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                    )
+                    IconButton(onClick = { onTotalMaxStrChange(null) }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
+                    }
+                }
+
+                // Indicador de unidad
+                Text(
+                    text = "Los montos deben ingresarse en la moneda principal (ej. 60000.50).",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onApply) {
+                Text("Aplicar")
+            }
+        },
+        dismissButton = {
+            Row {
+                TextButton(onClick = onClear) {
+                    Text("Limpiar todo")
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("Cancelar")
+                }
+            }
+        }
+    )
+}
+
+// ===== FUNCIONES DE COMPARTIR Y COMPONENTES AUXILIARES =====
 
 fun shareSum(context: android.content.Context, sum: SavedSumEntity) {
     val converter = Converters()

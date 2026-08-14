@@ -6,26 +6,33 @@ import androidx.lifecycle.viewModelScope
 import cu.christianrvdv.sumador.data.database.SavedSumDao
 import cu.christianrvdv.sumador.data.database.SavedSumEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+data class FilterState(
+    val name: String? = null,
+    val dateFrom: Long? = null,
+    val dateTo: Long? = null,
+    val totalMin: Long? = null,
+    val totalMax: Long? = null
+)
 
 @HiltViewModel
 class SavedSumsViewModel @Inject constructor(
     private val savedSumDao: SavedSumDao
 ) : ViewModel() {
 
-    // Estado de los filtros
+    // Estado de los filtros (internos y expuestos)
     private val _filterName = MutableStateFlow<String?>(null)
     private val _filterDateFrom = MutableStateFlow<Long?>(null)
     private val _filterDateTo = MutableStateFlow<Long?>(null)
     private val _filterTotalMin = MutableStateFlow<Long?>(null)
     private val _filterTotalMax = MutableStateFlow<Long?>(null)
+
+    // Estado combinado para la UI
+    private val _filterState = MutableStateFlow(FilterState())
+    val filterState: StateFlow<FilterState> = _filterState.asStateFlow()
 
     // Lista filtrada en tiempo real
     val allSavedSums: Flow<List<SavedSumEntity>> = combine(
@@ -50,6 +57,7 @@ class SavedSumsViewModel @Inject constructor(
         _filterDateTo.value = dateTo
         _filterTotalMin.value = totalMin
         _filterTotalMax.value = totalMax
+        _filterState.value = FilterState(name, dateFrom, dateTo, totalMin, totalMax)
     }
 
     fun clearFilters() {
