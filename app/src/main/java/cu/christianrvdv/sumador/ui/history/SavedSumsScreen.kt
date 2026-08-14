@@ -34,7 +34,6 @@ import cu.christianrvdv.sumador.ui.sumador.formatCurrency
 import cu.christianrvdv.sumador.ui.sumador.formatDenomination
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.text.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,16 +52,14 @@ fun SavedSumsScreen(
     // Estados locales para el diálogo de filtros (en unidad principal)
     var localDateFrom by remember { mutableStateOf<Long?>(null) }
     var localDateTo by remember { mutableStateOf<Long?>(null) }
-    var localTotalMinStr by remember { mutableStateOf<String?>(null) } // en unidad principal, ej "60000.50"
+    var localTotalMinStr by remember { mutableStateOf<String?>(null) }
     var localTotalMaxStr by remember { mutableStateOf<String?>(null) }
 
-    // Cargar valores actuales al abrir el diálogo (convertir de céntimos a unidad principal)
     LaunchedEffect(showFilterDialog) {
         if (showFilterDialog) {
             localDateFrom = filterState.dateFrom
             localDateTo = filterState.dateTo
             localTotalMinStr = filterState.totalMin?.let { cents ->
-                // Convertir céntimos a unidad principal con dos decimales
                 val value = cents.toDouble() / 100.0
                 if (value % 1.0 == 0.0) value.toInt().toString() else "%.2f".format(value)
             }
@@ -73,7 +70,6 @@ fun SavedSumsScreen(
         }
     }
 
-    // Aplicar filtro de nombre, manteniendo los otros filtros (que ya están en filterState)
     LaunchedEffect(searchText) {
         val name = if (searchText.isBlank()) null else searchText
         viewModel.setFilter(
@@ -85,7 +81,6 @@ fun SavedSumsScreen(
         )
     }
 
-    // Determinar si hay filtros activos (distintos del nombre)
     val hasActiveFilters = filterState.dateFrom != null ||
             filterState.dateTo != null ||
             filterState.totalMin != null ||
@@ -107,7 +102,7 @@ fun SavedSumsScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.back_label))
                     }
                 },
                 actions = {
@@ -115,7 +110,7 @@ fun SavedSumsScreen(
                         viewModel.clearFilters()
                         searchText = ""
                     }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear filters")
+                        Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_button))
                     }
                     BadgedBox(
                         badge = {
@@ -125,7 +120,7 @@ fun SavedSumsScreen(
                         }
                     ) {
                         IconButton(onClick = { showFilterDialog = true }) {
-                            Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                            Icon(Icons.Default.FilterList, contentDescription = stringResource(R.string.advanced_filters_title))
                         }
                     }
                 },
@@ -154,9 +149,7 @@ fun SavedSumsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
-            ) {
-                // No se usa para resultados en este caso
-            }
+            ) { }
 
             if (savedSums.isEmpty()) {
                 Box(
@@ -189,7 +182,6 @@ fun SavedSumsScreen(
         }
     }
 
-    // Diálogo de filtros avanzados
     if (showFilterDialog) {
         FilterDialog(
             dateFrom = localDateFrom,
@@ -201,7 +193,6 @@ fun SavedSumsScreen(
             onTotalMinStrChange = { localTotalMinStr = it },
             onTotalMaxStrChange = { localTotalMaxStr = it },
             onApply = {
-                // Convertir de unidad principal a céntimos
                 val totalMinCents = localTotalMinStr?.let { str ->
                     try {
                         (str.replace(',', '.').toDouble() * 100).toLong()
@@ -234,7 +225,6 @@ fun SavedSumsScreen(
         )
     }
 
-    // BottomSheet para detalle de una suma guardada
     selectedSum?.let { sum ->
         SavedSumDetailBottomSheet(
             savedSum = sum,
@@ -247,7 +237,6 @@ fun SavedSumsScreen(
     }
 }
 
-// ===== DIÁLOGO DE FILTROS =====
 @Composable
 private fun FilterDialog(
     dateFrom: Long?,
@@ -279,7 +268,6 @@ private fun FilterDialog(
                 modifier = Modifier.padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Encabezado
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -291,35 +279,34 @@ private fun FilterDialog(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = "Filtros avanzados",
+                        text = stringResource(R.string.advanced_filters_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f)
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_button))
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
 
-                // Sección fechas
                 Text(
-                    text = "Rango de fechas",
+                    text = stringResource(R.string.date_range_section),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
 
                 DateFilterRow(
-                    label = "Desde",
+                    label = stringResource(R.string.date_from),
                     date = dateFrom,
                     onDateChange = onDateFromChange,
                     endOfDay = false
                 )
 
                 DateFilterRow(
-                    label = "Hasta",
+                    label = stringResource(R.string.date_to),
                     date = dateTo,
                     onDateChange = onDateToChange,
                     endOfDay = true
@@ -331,28 +318,27 @@ private fun FilterDialog(
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // Sección montos
                 Text(
-                    text = "Rango de montos",
+                    text = stringResource(R.string.amount_range_section),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
 
                 AmountFilterField(
-                    label = "Monto mínimo",
+                    label = stringResource(R.string.amount_min),
                     value = totalMinStr,
                     onValueChange = onTotalMinStrChange
                 )
 
                 AmountFilterField(
-                    label = "Monto máximo",
+                    label = stringResource(R.string.amount_max),
                     value = totalMaxStr,
                     onValueChange = onTotalMaxStrChange
                 )
 
                 Text(
-                    text = "Los montos deben ingresarse en la moneda principal (ej. 60000.50).",
+                    text = stringResource(R.string.amount_instruction),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
@@ -360,7 +346,6 @@ private fun FilterDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Botones de acción
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -381,7 +366,7 @@ private fun FilterDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("Limpiar")
+                        Text(stringResource(R.string.clear_button))
                     }
 
                     Button(
@@ -401,7 +386,7 @@ private fun FilterDialog(
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("Aplicar")
+                        Text(stringResource(R.string.apply_button))
                     }
                 }
             }
@@ -409,7 +394,6 @@ private fun FilterDialog(
     }
 }
 
-// ===== FILA DE FECHA =====
 @Composable
 private fun DateFilterRow(
     label: String,
@@ -465,7 +449,7 @@ private fun DateFilterRow(
                 enabled = false,
                 readOnly = true,
                 label = { Text(label) },
-                placeholder = { Text("dd/mm/aaaa") },
+                placeholder = { Text(stringResource(R.string.date_placeholder)) },
                 singleLine = true,
                 leadingIcon = {
                     Icon(Icons.Default.DateRange, contentDescription = null)
@@ -487,7 +471,7 @@ private fun DateFilterRow(
                 onClick = { onDateChange(null) },
                 modifier = Modifier.size(40.dp)
             ) {
-                Icon(Icons.Default.Clear, contentDescription = "Limpiar $label")
+                Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_button))
             }
         } else {
             Spacer(Modifier.width(40.dp))
@@ -495,7 +479,6 @@ private fun DateFilterRow(
     }
 }
 
-// ===== CAMPO DE MONTO =====
 @Composable
 private fun AmountFilterField(
     label: String,
@@ -521,15 +504,13 @@ private fun AmountFilterField(
         trailingIcon = {
             if (value != null) {
                 IconButton(onClick = { onValueChange(null) }) {
-                    Icon(Icons.Default.Clear, contentDescription = "Limpiar $label")
+                    Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.clear_button))
                 }
             }
         },
         modifier = Modifier.fillMaxWidth()
     )
 }
-
-// ===== FUNCIONES DE COMPARTIR Y COMPONENTES AUXILIARES =====
 
 fun shareSum(context: android.content.Context, sum: SavedSumEntity) {
     val converter = Converters()
@@ -538,8 +519,8 @@ fun shareSum(context: android.content.Context, sum: SavedSumEntity) {
     val sb = StringBuilder()
     sb.append("📊 ${sum.name}\n")
     sb.append("📅 ${dateFormat.format(sum.timestamp)}\n")
-    sb.append("💰 Total: ${formatCurrency(sum.total)}\n\n")
-    sb.append("Detalle:\n")
+    sb.append("💰 ${context.getString(R.string.total_label, formatCurrency(sum.total))}\n\n")
+    sb.append("${context.getString(R.string.detail_label)}:\n")
     denominations.entries.sortedByDescending { it.key }.forEach { (denom, count) ->
         if (count > 0) {
             sb.append("  ${formatDenomination(denom)} x $count = ${formatCurrency((denom * count).toLong())}\n")
@@ -550,7 +531,7 @@ fun shareSum(context: android.content.Context, sum: SavedSumEntity) {
         type = "text/plain"
         putExtra(Intent.EXTRA_TEXT, shareText)
     }
-    context.startActivity(Intent.createChooser(intent, "Compartir suma"))
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_sum)))
 }
 
 @Composable
@@ -599,10 +580,10 @@ fun SavedSumItem(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = onShare) {
-                    Icon(Icons.Default.Share, contentDescription = "Share")
+                    Icon(Icons.Default.Share, contentDescription = stringResource(R.string.share_label))
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete_label))
                 }
             }
         }
@@ -655,19 +636,13 @@ fun SavedSumDetailBottomSheet(
                         .padding(12.dp)
                 ) {
                     Text(
-                        text = stringResource(
-                            R.string.date_label,
-                            dateFormat.format(savedSum.timestamp)
-                        ),
+                        text = stringResource(R.string.date_label, dateFormat.format(savedSum.timestamp)),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = stringResource(
-                            R.string.total_label,
-                            "${formatCurrency(savedSum.total)} ${CurrencySymbol.PESO.symbol}"
-                        ),
+                        text = stringResource(R.string.total_label, formatCurrency(savedSum.total) + " " + CurrencySymbol.PESO.symbol),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -750,7 +725,7 @@ fun SavedSumDetailBottomSheet(
                 ) {
                     Icon(
                         Icons.Default.Share,
-                        contentDescription = "Compartir",
+                        contentDescription = stringResource(R.string.share_label),
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }

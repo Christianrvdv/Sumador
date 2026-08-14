@@ -41,15 +41,13 @@
     <!-- Bill counts -->
     <string name="total_bills">Billetes: %d</string>
     <string name="total_bills_detail">%d billetes en total</string>
-    <string name="total_bills_short">(%d)</string>   <!-- Nueva: cuenta corta entre paréntesis -->
+    <string name="total_bills_short">(%d)</string>
 
     <!-- Empty state -->
     <string name="empty_state_title">Aún no hay billetes</string>
     <string name="empty_state_description">Usa el botón + para agregar cantidades y empezar a contar</string>
 
-    <!-- ===== NUEVAS CADENAS PARA TEXTOS HARCODEADOS ===== -->
-
-    <!-- Pantalla Acerca de -->
+    <!-- About screen -->
     <string name="about_title">Acerca de Sumador</string>
     <string name="about_version">Versión %s</string>
     <string name="about_description">Sumador es una aplicación para contar billetes y monedas de forma rápida y sencilla. Ideal para comerciantes, cajeros y cualquier persona que maneje efectivo.</string>
@@ -67,12 +65,12 @@
     <string name="about_portfolio_button">Portafolio</string>
     <string name="about_close_button">Cerrar</string>
 
-    <!-- Descripciones de accesibilidad -->
+    <!-- Content descriptions for accessibility -->
     <string name="content_description_about">Acerca de</string>
     <string name="content_description_decrement">Decrementar</string>
     <string name="content_description_increment">Incrementar</string>
 
-    <!-- Configuraciones adicionales -->
+    <!-- Settings additional strings -->
     <string name="settings_options_section">Opciones</string>
     <string name="auto_save_description">Guarda las cantidades automáticamente</string>
     <string name="confirm_clear_description">Pide confirmación antes de limpiar</string>
@@ -86,7 +84,6 @@
     <string name="save_sum_name_hint">Nombre (opcional)</string>
     <string name="save_sum_name_default">Suma %s</string>
 
-
     <string name="name_label">Nombre</string>
     <string name="date_label">Fecha: %s</string>
     <string name="total_label">Total: %s</string>
@@ -99,18 +96,33 @@
     <string name="edit_name_title">Editar nombre</string>
     <string name="edit_name_message">Introduce el nuevo nombre para esta suma guardada:</string>
 
-    <!-- Historial -->
     <string name="search_hint">Buscar por nombre...</string>
     <string name="share">Compartir</string>
-
-    <!-- Ajustes -->
     <string name="keep_screen_on_label">Mantener pantalla activa</string>
     <string name="keep_screen_on_description">Evita que la pantalla se apague mientras usas la app</string>
-
-    <!-- Compartir -->
     <string name="share_sum">Compartir suma</string>
 
     <!-- Settings - Use Coins -->
     <string name="use_coins_label">Usar monedas</string>
     <string name="use_coins_description">Mostrar monedas junto a los billetes para contar</string>
+
+    <!-- New strings for missing hardcoded texts -->
+    <string name="back_label">Atrás</string>
+    <string name="advanced_filters_title">Filtros avanzados</string>
+    <string name="date_range_section">Rango de fechas</string>
+    <string name="amount_range_section">Rango de montos</string>
+    <string name="date_from">Desde</string>
+    <string name="date_to">Hasta</string>
+    <string name="date_placeholder">dd/MM/aaaa</string>
+    <string name="clear_button">Limpiar</string>
+    <string name="apply_button">Aplicar</string>
+    <string name="amount_min">Monto mínimo</string>
+    <string name="amount_max">Monto máximo</string>
+    <string name="amount_instruction">Los montos deben ingresarse en la moneda principal (ej. 60000.50).</string>
+    <string name="share_label">Compartir</string>
+    <string name="delete_label">Eliminar</string>
+    <string name="enter_name_prompt">Introduce un nombre para esta suma:</string>
+    <string name="summary_label">Resumen</string>
+    <string name="no_bills_selected">No hay billetes seleccionados.</string>
+    <string name="total_summary">Total:</string>
 </resources>

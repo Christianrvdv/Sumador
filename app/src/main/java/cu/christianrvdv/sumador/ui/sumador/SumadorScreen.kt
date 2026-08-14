@@ -1,4 +1,3 @@
-// ui/sumador/SumadorScreen.kt
 package cu.christianrvdv.sumador.ui.sumador
 
 import android.content.Context
@@ -53,22 +52,18 @@ fun SumadorScreen(
     var showSaveDialog by remember { mutableStateOf(false) }
     var saveName by remember { mutableStateOf("") }
 
-    // Sincronizar autoSave
     LaunchedEffect(settingsState.autoSave) {
         viewModel.setAutoSave(settingsState.autoSave)
     }
 
-    // Sincronizar moneda
     LaunchedEffect(settingsState.currencySymbol) {
         viewModel.setCurrency(settingsState.currencySymbol)
     }
 
-    // Sincronizar useCoins
     LaunchedEffect(settingsState.useCoins) {
         viewModel.setUseCoins(settingsState.useCoins)
     }
 
-    // Obtener denominaciones con el flag useCoins
     val denominacionesActuales = remember(settingsState.currencySymbol, settingsState.useCoins) {
         getDenominations(settingsState.currencySymbol, settingsState.useCoins)
     }
@@ -113,7 +108,7 @@ fun SumadorScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToHistory) {
-                        Icon(Icons.Default.History, contentDescription = "Historial")
+                        Icon(Icons.Default.History, contentDescription = stringResource(R.string.history_title))
                     }
                     IconButton(onClick = { showAboutDialog = true }) {
                         Icon(
@@ -157,7 +152,6 @@ fun SumadorScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Total
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -183,10 +177,7 @@ fun SumadorScreen(
                                 if (totalBills > 0) {
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = stringResource(
-                                            R.string.total_bills_short,
-                                            totalBills
-                                        ),
+                                        text = stringResource(R.string.total_bills_short, totalBills),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -194,12 +185,10 @@ fun SumadorScreen(
                             }
                         }
 
-                        // Botones
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Compartir
                             if (hasBills) {
                                 FilledTonalIconButton(
                                     onClick = {
@@ -222,7 +211,6 @@ fun SumadorScreen(
                                 }
                             }
 
-                            // Guardar
                             if (hasBills) {
                                 FilledTonalIconButton(
                                     onClick = { showSaveDialog = true },
@@ -239,7 +227,6 @@ fun SumadorScreen(
                                 }
                             }
 
-                            // Limpiar
                             FilledTonalIconButton(
                                 onClick = {
                                     if (settingsState.confirmClear) {
@@ -336,7 +323,6 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogos
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -366,7 +352,7 @@ fun SumadorScreen(
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = "Introduce un nombre para esta suma:",
+                        text = stringResource(R.string.enter_name_prompt),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -390,7 +376,7 @@ fun SumadorScreen(
                                 .padding(12.dp)
                         ) {
                             Text(
-                                text = "Resumen:",
+                                text = stringResource(R.string.summary_label),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onSurface
@@ -404,7 +390,7 @@ fun SumadorScreen(
 
                             if (items.isEmpty()) {
                                 Text(
-                                    text = "No hay billetes seleccionados.",
+                                    text = stringResource(R.string.no_bills_selected),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -435,7 +421,7 @@ fun SumadorScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(
-                                        text = "Total:",
+                                        text = stringResource(R.string.total_summary),
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Bold
                                     )
@@ -582,14 +568,12 @@ fun BillInputRow(
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                // Mostrar símbolo de moneda solo si es billete (denom >= 100)
                 if (denomination >= 100) {
                     Text(
                         text = currencySymbol,
                         style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                     )
                 }
-                // Para monedas, no mostramos el símbolo de moneda porque ya incluimos "¢"
             }
 
             Row(
@@ -675,36 +659,19 @@ fun BillInputRow(
     }
 }
 
-// ==================== FUNCIONES DE FORMATO ====================
-
-/**
- * Formatea un monto en céntimos a un string con dos decimales.
- * Usado para totales y productos en la UI.
- * Ej: 1250 → "12.50", 5000 → "50.00"
- */
 fun formatCurrency(amount: Long): String {
     val whole = amount / 100
     val cents = amount % 100
     return if (cents == 0L) whole.toString() else "$whole.${String.format("%02d", cents)}"
 }
 
-/**
- * Formatea una denominación para mostrarla en la interfaz.
- * - Si es múltiplo de 100 (billete): muestra el valor en la unidad principal (ej. 500 → "5").
- * - Si es < 100 (moneda): muestra el valor entero en céntimos seguido de "¢" (ej. 50 → "50¢").
- * - Si es un valor con céntimos no múltiplo de 100 (poco común), muestra con dos decimales.
- */
 fun formatDenomination(denom: Int): String {
     return if (denom % 100 == 0) {
-        // Billete: dividir entre 100
         (denom / 100).toString()
     } else {
-        // Moneda o valor fraccionario: mostrar con "¢"
         "$denom¢"
     }
 }
-
-// ==================== COMPARTIR ====================
 
 fun shareCurrentSum(context: Context, state: SumadorState, currency: CurrencySymbol) {
     val sb = StringBuilder()
@@ -718,7 +685,6 @@ fun shareCurrentSum(context: Context, state: SumadorState, currency: CurrencySym
             val count = countStr.toIntOrNull() ?: 0
             if (count > 0) {
                 val value = denom * count
-                // Mostrar la denominación formateada y el valor total con formatCurrency
                 sb.append("  ${formatDenomination(denom)} x $count = ${formatCurrency(value.toLong())}\n")
             }
         }

@@ -1,4 +1,3 @@
-// ui/settings/SettingsDialog.kt
 package cu.christianrvdv.sumador.ui.settings
 
 import androidx.compose.foundation.clickable
@@ -46,7 +45,6 @@ fun SettingsBottomSheet(
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Título
             Text(
                 text = stringResource(R.string.settings_title),
                 style = MaterialTheme.typography.headlineSmall,
@@ -55,7 +53,6 @@ fun SettingsBottomSheet(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            // --- Sección Tema ---
             SettingsSection(
                 icon = Icons.Default.BrightnessMedium,
                 title = stringResource(R.string.theme_label)
@@ -78,7 +75,6 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // --- Sección Moneda ---
             SettingsSection(
                 icon = Icons.Default.AttachMoney,
                 title = stringResource(R.string.currency_label)
@@ -101,7 +97,6 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // --- Sección Idioma ---
             SettingsSection(
                 icon = Icons.Default.Language,
                 title = stringResource(R.string.language_label)
@@ -124,7 +119,6 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // --- Sección Orden de billetes ---
             SettingsSection(
                 icon = Icons.Default.Sort,
                 title = stringResource(R.string.sort_label)
@@ -143,7 +137,6 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // --- Sección Switches (unificada) ---
             SettingsSection(
                 icon = Icons.Default.ToggleOn,
                 title = stringResource(R.string.settings_options_section)
@@ -166,7 +159,6 @@ fun SettingsBottomSheet(
                     onCheckedChange = onKeepScreenOnChange,
                     description = stringResource(R.string.keep_screen_on_description)
                 )
-
                 SettingsSwitchItem(
                     label = stringResource(R.string.use_coins_label),
                     checked = settingsState.useCoins,
@@ -175,7 +167,6 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // --- Botón "Acerca de" ---
             TextButton(
                 onClick = onAboutClick,
                 modifier = Modifier.fillMaxWidth(),
@@ -189,7 +180,6 @@ fun SettingsBottomSheet(
                 Text(stringResource(R.string.settings_about_button))
             }
 
-            // Botón de cierre
             Button(
                 onClick = onDismiss,
                 modifier = Modifier
@@ -211,7 +201,6 @@ fun SettingsBottomSheet(
     }
 }
 
-// Componentes auxiliares (sin cambios)
 @Composable
 private fun SettingsSection(
     icon: ImageVector,

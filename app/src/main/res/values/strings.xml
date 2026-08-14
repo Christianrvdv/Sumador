@@ -41,13 +41,11 @@
     <!-- Bill counts -->
     <string name="total_bills">Bills: %d</string>
     <string name="total_bills_detail">%d bills total</string>
-    <string name="total_bills_short">(%d)</string>   <!-- New: short parenthesized count -->
+    <string name="total_bills_short">(%d)</string>
 
     <!-- Empty state -->
     <string name="empty_state_title">No bills added yet</string>
     <string name="empty_state_description">Use the + button to add quantities and start counting</string>
-
-    <!-- ===== NEW STRINGS FOR HARDCODED TEXTS ===== -->
 
     <!-- About screen -->
     <string name="about_title">About Sumador</string>
@@ -79,7 +77,6 @@
     <string name="settings_about_button">About</string>
     <string name="settings_done_button">Done</string>
 
-
     <!-- History -->
     <string name="history_title">Saved Sums</string>
     <string name="history_empty">No saved sums yet</string>
@@ -108,4 +105,24 @@
     <!-- Settings - Use Coins -->
     <string name="use_coins_label">Use coins</string>
     <string name="use_coins_description">Show coins alongside bills for counting</string>
+
+    <!-- New strings for missing hardcoded texts -->
+    <string name="back_label">Back</string>
+    <string name="advanced_filters_title">Advanced filters</string>
+    <string name="date_range_section">Date range</string>
+    <string name="amount_range_section">Amount range</string>
+    <string name="date_from">From</string>
+    <string name="date_to">To</string>
+    <string name="date_placeholder">dd/MM/yyyy</string>
+    <string name="clear_button">Clear</string>
+    <string name="apply_button">Apply</string>
+    <string name="amount_min">Minimum amount</string>
+    <string name="amount_max">Maximum amount</string>
+    <string name="amount_instruction">Amounts must be entered in the main currency (e.g. 60000.50).</string>
+    <string name="share_label">Share</string>
+    <string name="delete_label">Delete</string>
+    <string name="enter_name_prompt">Enter a name for this sum:</string>
+    <string name="summary_label">Summary</string>
+    <string name="no_bills_selected">No bills selected.</string>
+    <string name="total_summary">Total:</string>
 </resources>

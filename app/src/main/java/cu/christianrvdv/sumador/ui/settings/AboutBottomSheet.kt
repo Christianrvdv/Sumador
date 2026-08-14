@@ -44,7 +44,6 @@ fun AboutBottomSheet(
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Título y versión
             Column {
                 Text(
                     text = stringResource(R.string.about_title),
@@ -59,7 +58,6 @@ fun AboutBottomSheet(
                 )
             }
 
-            // Descripción de la app
             Text(
                 text = stringResource(R.string.about_description),
                 style = MaterialTheme.typography.bodyMedium,
@@ -67,7 +65,6 @@ fun AboutBottomSheet(
                 modifier = Modifier.padding(top = 4.dp)
             )
 
-            // Características principales
             Text(
                 text = stringResource(R.string.about_features_title),
                 style = MaterialTheme.typography.labelLarge,
@@ -105,7 +102,6 @@ fun AboutBottomSheet(
 
             Spacer(Modifier.height(8.dp))
 
-            // Código abierto
             Text(
                 text = stringResource(R.string.about_open_source_title),
                 style = MaterialTheme.typography.labelLarge,
@@ -151,7 +147,6 @@ fun AboutBottomSheet(
 
             Spacer(Modifier.height(8.dp))
 
-            // Desarrollador
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -201,7 +196,6 @@ fun AboutBottomSheet(
                 }
             }
 
-            // Botón de cierre
             Button(
                 onClick = onDismiss,
                 modifier = Modifier
