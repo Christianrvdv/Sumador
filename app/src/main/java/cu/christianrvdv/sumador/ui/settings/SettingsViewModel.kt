@@ -25,7 +25,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         val AUTO_SAVE = booleanPreferencesKey("auto_save")
         val CONFIRM_CLEAR = booleanPreferencesKey("confirm_clear")
         val LANGUAGE = stringPreferencesKey("language")
-        val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")  // NUEVO
+        val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
+        val USE_COINS = booleanPreferencesKey("use_coins")
     }
 
     private val _state = MutableStateFlow(SettingsState())
@@ -49,7 +50,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                         val confirmClear = prefs[Keys.CONFIRM_CLEAR] ?: true
                         val languageStr = prefs[Keys.LANGUAGE] ?: "SYSTEM"
                         val language = LanguageOption.valueOf(languageStr)
-                        val keepScreenOn = prefs[Keys.KEEP_SCREEN_ON] ?: false  // NUEVO
+                        val keepScreenOn = prefs[Keys.KEEP_SCREEN_ON] ?: false
+                        val useCoins = prefs[Keys.USE_COINS] ?: false  // NUEVO
                         _state.value = SettingsState(
                             theme = theme,
                             currencySymbol = currency,
@@ -57,7 +59,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                             autoSave = autoSave,
                             confirmClear = confirmClear,
                             language = language,
-                            keepScreenOn = keepScreenOn
+                            keepScreenOn = keepScreenOn,
+                            useCoins = useCoins
                         )
                     } catch (e: Exception) {
                         Log.e("SettingsViewModel", "Error parsing settings", e)
@@ -126,7 +129,6 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    // ⭐ NUEVO MÉTODO
     suspend fun updateKeepScreenOn(enabled: Boolean) {
         try {
             context.dataStore.edit { prefs ->
@@ -134,6 +136,16 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             }
         } catch (e: Exception) {
             Log.e("SettingsViewModel", "Error saving keepScreenOn", e)
+        }
+    }
+
+    suspend fun updateUseCoins(enabled: Boolean) {
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.USE_COINS] = enabled
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving useCoins", e)
         }
     }
 

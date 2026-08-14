@@ -1,3 +1,4 @@
+// ui/settings/SettingsDialog.kt
 package cu.christianrvdv.sumador.ui.settings
 
 import androidx.compose.foundation.clickable
@@ -28,7 +29,8 @@ fun SettingsBottomSheet(
     onAutoSaveChange: (Boolean) -> Unit,
     onConfirmClearChange: (Boolean) -> Unit,
     onLanguageChange: (LanguageOption) -> Unit,
-    onKeepScreenOnChange: (Boolean) -> Unit,   // <-- NUEVO PARÁMETRO
+    onKeepScreenOnChange: (Boolean) -> Unit,
+    onUseCoinsChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit
 ) {
     ModalBottomSheet(
@@ -158,12 +160,18 @@ fun SettingsBottomSheet(
                     onCheckedChange = onConfirmClearChange,
                     description = stringResource(R.string.confirm_clear_description)
                 )
-                // ⭐ NUEVO SWITCH
                 SettingsSwitchItem(
                     label = stringResource(R.string.keep_screen_on_label),
                     checked = settingsState.keepScreenOn,
                     onCheckedChange = onKeepScreenOnChange,
                     description = stringResource(R.string.keep_screen_on_description)
+                )
+
+                SettingsSwitchItem(
+                    label = stringResource(R.string.use_coins_label),
+                    checked = settingsState.useCoins,
+                    onCheckedChange = onUseCoinsChange,
+                    description = stringResource(R.string.use_coins_description)
                 )
             }
 

@@ -109,4 +109,8 @@
 
     <!-- Compartir -->
     <string name="share_sum">Compartir suma</string>
+
+    <!-- Settings - Use Coins -->
+    <string name="use_coins_label">Usar monedas</string>
+    <string name="use_coins_description">Mostrar monedas junto a los billetes para contar</string>
 </resources>

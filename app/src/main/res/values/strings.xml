@@ -104,4 +104,8 @@
     <string name="keep_screen_on_label">Keep screen on</string>
     <string name="keep_screen_on_description">Prevents screen from turning off while using the app</string>
     <string name="share_sum">Share sum</string>
+
+    <!-- Settings - Use Coins -->
+    <string name="use_coins_label">Use coins</string>
+    <string name="use_coins_description">Show coins alongside bills for counting</string>
 </resources>

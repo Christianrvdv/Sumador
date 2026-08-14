@@ -1,3 +1,4 @@
+// ui/sumador/SumadorScreen.kt
 package cu.christianrvdv.sumador.ui.sumador
 
 import android.content.Context
@@ -31,7 +32,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import cu.christianrvdv.sumador.R
 import cu.christianrvdv.sumador.ui.settings.*
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -63,12 +63,18 @@ fun SumadorScreen(
         viewModel.setCurrency(settingsState.currencySymbol)
     }
 
-    val denominacionesActuales = remember(settingsState.currencySymbol) {
-        getDenominations(settingsState.currencySymbol)
+    // Sincronizar useCoins
+    LaunchedEffect(settingsState.useCoins) {
+        viewModel.setUseCoins(settingsState.useCoins)
+    }
+
+    // Obtener denominaciones con el flag useCoins
+    val denominacionesActuales = remember(settingsState.currencySymbol, settingsState.useCoins) {
+        getDenominations(settingsState.currencySymbol, settingsState.useCoins)
     }
 
     val denominacionesOrdenadas =
-        remember(settingsState.sortAscending, settingsState.currencySymbol) {
+        remember(settingsState.sortAscending, denominacionesActuales) {
             if (settingsState.sortAscending) denominacionesActuales.sorted() else denominacionesActuales.sortedDescending()
         }
 
@@ -482,44 +488,37 @@ fun SumadorScreen(
             onThemeChange = { theme -> coroutineScope.launch { settingsViewModel.updateTheme(theme) } },
             onCurrencyChange = { currency ->
                 coroutineScope.launch {
-                    settingsViewModel.updateCurrency(
-                        currency
-                    )
+                    settingsViewModel.updateCurrency(currency)
                 }
             },
             onSortChange = { ascending ->
                 coroutineScope.launch {
-                    settingsViewModel.updateSortOrder(
-                        ascending
-                    )
+                    settingsViewModel.updateSortOrder(ascending)
                 }
             },
             onAutoSaveChange = { enabled ->
                 coroutineScope.launch {
-                    settingsViewModel.updateAutoSave(
-                        enabled
-                    )
+                    settingsViewModel.updateAutoSave(enabled)
                 }
             },
             onConfirmClearChange = { enabled ->
                 coroutineScope.launch {
-                    settingsViewModel.updateConfirmClear(
-                        enabled
-                    )
+                    settingsViewModel.updateConfirmClear(enabled)
                 }
             },
             onLanguageChange = { language ->
                 coroutineScope.launch {
-                    settingsViewModel.updateLanguage(
-                        language
-                    )
+                    settingsViewModel.updateLanguage(language)
                 }
             },
             onKeepScreenOnChange = { enabled ->
                 coroutineScope.launch {
-                    settingsViewModel.updateKeepScreenOn(
-                        enabled
-                    )
+                    settingsViewModel.updateKeepScreenOn(enabled)
+                }
+            },
+            onUseCoinsChange = { enabled ->
+                coroutineScope.launch {
+                    settingsViewModel.updateUseCoins(enabled)
                 }
             },
             onAboutClick = {
@@ -672,13 +671,25 @@ fun BillInputRow(
     }
 }
 
+// ==================== FUNCIONES DE FORMATO ====================
+
 fun formatCurrency(amount: Long): String {
-    return NumberFormat.getIntegerInstance().format(amount)
+    val whole = amount / 100
+    val cents = amount % 100
+    return if (cents == 0L) whole.toString() else "$whole.${String.format("%02d", cents)}"
 }
 
 fun formatDenomination(denom: Int): String {
-    return denom.toString()
+    return if (denom % 100 == 0) {
+        (denom / 100).toString()
+    } else {
+        val euros = denom / 100
+        val cents = denom % 100
+        if (euros == 0) "0.$cents" else "$euros.${String.format("%02d", cents)}"
+    }
 }
+
+// ==================== COMPARTIR ====================
 
 fun shareCurrentSum(context: Context, state: SumadorState, currency: CurrencySymbol) {
     val sb = StringBuilder()

@@ -20,5 +20,6 @@ data class SettingsState(
     val autoSave: Boolean = true,
     val confirmClear: Boolean = true,
     val language: LanguageOption = LanguageOption.SYSTEM,
-    val keepScreenOn: Boolean = false 
+    val keepScreenOn: Boolean = false,
+    val useCoins: Boolean = false 
 )
