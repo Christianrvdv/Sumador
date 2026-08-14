@@ -1,4 +1,3 @@
-// ui/history/SavedSumsScreen.kt
 package cu.christianrvdv.sumador.ui.history
 
 import android.app.DatePickerDialog
@@ -24,6 +23,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import cu.christianrvdv.sumador.R
 import cu.christianrvdv.sumador.data.database.Converters
@@ -33,6 +34,7 @@ import cu.christianrvdv.sumador.ui.sumador.formatCurrency
 import cu.christianrvdv.sumador.ui.sumador.formatDenomination
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.text.format
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,7 +96,11 @@ fun SavedSumsScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(28.dp))
+                        Icon(
+                            Icons.Default.History,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp)
+                        )
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.history_title))
                     }
@@ -133,7 +139,11 @@ fun SavedSumsScreen(
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
             SearchBar(
                 query = searchText,
                 onQueryChange = { searchText = it },
@@ -195,12 +205,16 @@ fun SavedSumsScreen(
                 val totalMinCents = localTotalMinStr?.let { str ->
                     try {
                         (str.replace(',', '.').toDouble() * 100).toLong()
-                    } catch (_: NumberFormatException) { null }
+                    } catch (_: NumberFormatException) {
+                        null
+                    }
                 }
                 val totalMaxCents = localTotalMaxStr?.let { str ->
                     try {
                         (str.replace(',', '.').toDouble() * 100).toLong()
-                    } catch (_: NumberFormatException) { null }
+                    } catch (_: NumberFormatException) {
+                        null
+                    }
                 }
                 viewModel.setFilter(
                     name = if (searchText.isBlank()) null else searchText,
@@ -248,196 +262,270 @@ private fun FilterDialog(
     onClear: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
-    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        title = { Text("Filtros avanzados") },
-        text = {
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 6.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .widthIn(max = 420.dp)
+        ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Fecha desde
+                // Encabezado
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Desde:", modifier = Modifier.weight(0.3f))
-                    OutlinedTextField(
-                        value = dateFrom?.let { dateFormat.format(Date(it)) } ?: "",
-                        onValueChange = { /* Solo lectura, se usa el DatePicker */ },
-                        readOnly = true,
-                        modifier = Modifier.weight(0.5f),
-                        placeholder = { Text("dd/mm/aaaa") },
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                val calendar = Calendar.getInstance()
-                                dateFrom?.let { calendar.timeInMillis = it }
-                                DatePickerDialog(
-                                    context,
-                                    { _, year, month, dayOfMonth ->
-                                        val selected = Calendar.getInstance().apply {
-                                            set(year, month, dayOfMonth)
-                                            set(Calendar.HOUR_OF_DAY, 0)
-                                            set(Calendar.MINUTE, 0)
-                                            set(Calendar.SECOND, 0)
-                                            set(Calendar.MILLISECOND, 0)
-                                        }.timeInMillis
-                                        onDateFromChange(selected)
-                                    },
-                                    calendar.get(Calendar.YEAR),
-                                    calendar.get(Calendar.MONTH),
-                                    calendar.get(Calendar.DAY_OF_MONTH)
-                                ).show()
-                            }) {
-                                Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
-                            }
-                        }
+                    Icon(
+                        Icons.Default.FilterAlt,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
                     )
-                    IconButton(onClick = { onDateFromChange(null) }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = "Filtros avanzados",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar")
                     }
                 }
 
-                // Fecha hasta
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text("Hasta:", modifier = Modifier.weight(0.3f))
-                    OutlinedTextField(
-                        value = dateTo?.let { dateFormat.format(Date(it)) } ?: "",
-                        onValueChange = { /* Solo lectura */ },
-                        readOnly = true,
-                        modifier = Modifier.weight(0.5f),
-                        placeholder = { Text("dd/mm/aaaa") },
-                        singleLine = true,
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                val calendar = Calendar.getInstance()
-                                dateTo?.let { calendar.timeInMillis = it }
-                                DatePickerDialog(
-                                    context,
-                                    { _, year, month, dayOfMonth ->
-                                        val selected = Calendar.getInstance().apply {
-                                            set(year, month, dayOfMonth)
-                                            set(Calendar.HOUR_OF_DAY, 23)
-                                            set(Calendar.MINUTE, 59)
-                                            set(Calendar.SECOND, 59)
-                                            set(Calendar.MILLISECOND, 999)
-                                        }.timeInMillis
-                                        onDateToChange(selected)
-                                    },
-                                    calendar.get(Calendar.YEAR),
-                                    calendar.get(Calendar.MONTH),
-                                    calendar.get(Calendar.DAY_OF_MONTH)
-                                ).show()
-                            }) {
-                                Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
-                            }
-                        }
-                    )
-                    IconButton(onClick = { onDateToChange(null) }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
-                    }
-                }
+                Spacer(Modifier.height(8.dp))
 
-                Divider()
+                // Sección fechas
+                Text(
+                    text = "Rango de fechas",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-                // Total mínimo (permite decimales)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text("Mínimo:", modifier = Modifier.weight(0.3f))
-                    OutlinedTextField(
-                        value = totalMinStr ?: "",
-                        onValueChange = { newValue ->
-                            // Permitir solo dígitos, punto o coma (como separador decimal)
-                            val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
-                            // Evitar múltiples puntos/comas
-                            val valid = filtered.replace(',', '.')
-                                .let { str ->
-                                    val parts = str.split('.')
-                                    parts.size <= 2 && parts.all { it.all { c -> c.isDigit() } }
-                                }
-                            if (valid) {
-                                onTotalMinStrChange(filtered.ifEmpty { null })
-                            }
-                        },
-                        modifier = Modifier.weight(0.5f),
-                        placeholder = { Text("0") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                    )
-                    IconButton(onClick = { onTotalMinStrChange(null) }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
-                    }
-                }
+                DateFilterRow(
+                    label = "Desde",
+                    date = dateFrom,
+                    onDateChange = onDateFromChange,
+                    endOfDay = false
+                )
 
-                // Total máximo (permite decimales)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text("Máximo:", modifier = Modifier.weight(0.3f))
-                    OutlinedTextField(
-                        value = totalMaxStr ?: "",
-                        onValueChange = { newValue ->
-                            val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
-                            val valid = filtered.replace(',', '.')
-                                .let { str ->
-                                    val parts = str.split('.')
-                                    parts.size <= 2 && parts.all { it.all { c -> c.isDigit() } }
-                                }
-                            if (valid) {
-                                onTotalMaxStrChange(filtered.ifEmpty { null })
-                            }
-                        },
-                        modifier = Modifier.weight(0.5f),
-                        placeholder = { Text("0") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                    )
-                    IconButton(onClick = { onTotalMaxStrChange(null) }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Limpiar")
-                    }
-                }
+                DateFilterRow(
+                    label = "Hasta",
+                    date = dateTo,
+                    onDateChange = onDateToChange,
+                    endOfDay = true
+                )
 
-                // Indicador de unidad
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+                Spacer(Modifier.height(8.dp))
+
+                // Sección montos
+                Text(
+                    text = "Rango de montos",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold
+                )
+
+                AmountFilterField(
+                    label = "Monto mínimo",
+                    value = totalMinStr,
+                    onValueChange = onTotalMinStrChange
+                )
+
+                AmountFilterField(
+                    label = "Monto máximo",
+                    value = totalMaxStr,
+                    onValueChange = onTotalMaxStrChange
+                )
+
                 Text(
                     text = "Los montos deben ingresarse en la moneda principal (ej. 60000.50).",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
                 )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onApply) {
-                Text("Aplicar")
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(onClick = onClear) {
-                    Text("Limpiar todo")
-                }
-                TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+
+                Spacer(Modifier.height(16.dp))
+
+                // Botones de acción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    TextButton(
+                        onClick = onClear,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.DeleteSweep,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Limpiar")
+                    }
+
+                    Button(
+                        onClick = onApply,
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text("Aplicar")
+                    }
                 }
             }
         }
+    }
+}
+
+// ===== FILA DE FECHA =====
+@Composable
+private fun DateFilterRow(
+    label: String,
+    date: Long?,
+    onDateChange: (Long?) -> Unit,
+    endOfDay: Boolean = false
+) {
+    val context = LocalContext.current
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
+    val openPicker = {
+        val calendar = Calendar.getInstance()
+        date?.let { calendar.timeInMillis = it }
+        DatePickerDialog(
+            context,
+            { _, year, month, dayOfMonth ->
+                val selected = Calendar.getInstance().apply {
+                    set(year, month, dayOfMonth)
+                    if (endOfDay) {
+                        set(Calendar.HOUR_OF_DAY, 23)
+                        set(Calendar.MINUTE, 59)
+                        set(Calendar.SECOND, 59)
+                        set(Calendar.MILLISECOND, 999)
+                    } else {
+                        set(Calendar.HOUR_OF_DAY, 0)
+                        set(Calendar.MINUTE, 0)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                }.timeInMillis
+                onDateChange(selected)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(4.dp))
+                .clickable { openPicker() }
+        ) {
+            OutlinedTextField(
+                value = date?.let { dateFormat.format(Date(it)) } ?: "",
+                onValueChange = {},
+                enabled = false,
+                readOnly = true,
+                label = { Text(label) },
+                placeholder = { Text("dd/mm/aaaa") },
+                singleLine = true,
+                leadingIcon = {
+                    Icon(Icons.Default.DateRange, contentDescription = null)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledLeadingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
+        }
+
+        if (date != null) {
+            IconButton(
+                onClick = { onDateChange(null) },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Icon(Icons.Default.Clear, contentDescription = "Limpiar $label")
+            }
+        } else {
+            Spacer(Modifier.width(40.dp))
+        }
+    }
+}
+
+// ===== CAMPO DE MONTO =====
+@Composable
+private fun AmountFilterField(
+    label: String,
+    value: String?,
+    onValueChange: (String?) -> Unit
+) {
+    OutlinedTextField(
+        value = value ?: "",
+        onValueChange = { newValue ->
+            val filtered = newValue.filter { it.isDigit() || it == '.' || it == ',' }
+            val valid = filtered.replace(',', '.').let { str ->
+                val parts = str.split('.')
+                parts.size <= 2 && parts.all { part -> part.all { it.isDigit() } }
+            }
+            if (valid) {
+                onValueChange(filtered.ifEmpty { null })
+            }
+        },
+        label = { Text(label) },
+        placeholder = { Text("0.00") },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        trailingIcon = {
+            if (value != null) {
+                IconButton(onClick = { onValueChange(null) }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Limpiar $label")
+                }
+            }
+        },
+        modifier = Modifier.fillMaxWidth()
     )
 }
 
@@ -567,13 +655,19 @@ fun SavedSumDetailBottomSheet(
                         .padding(12.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.date_label, dateFormat.format(savedSum.timestamp)),
+                        text = stringResource(
+                            R.string.date_label,
+                            dateFormat.format(savedSum.timestamp)
+                        ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = stringResource(R.string.total_label, "${formatCurrency(savedSum.total)} ${CurrencySymbol.PESO.symbol}"),
+                        text = stringResource(
+                            R.string.total_label,
+                            "${formatCurrency(savedSum.total)} ${CurrencySymbol.PESO.symbol}"
+                        ),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
