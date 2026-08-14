@@ -98,4 +98,15 @@
 
     <string name="edit_name_title">Editar nombre</string>
     <string name="edit_name_message">Introduce el nuevo nombre para esta suma guardada:</string>
+
+    <!-- Historial -->
+    <string name="search_hint">Buscar por nombre...</string>
+    <string name="share">Compartir</string>
+
+    <!-- Ajustes -->
+    <string name="keep_screen_on_label">Mantener pantalla activa</string>
+    <string name="keep_screen_on_description">Evita que la pantalla se apague mientras usas la app</string>
+
+    <!-- Compartir -->
+    <string name="share_sum">Compartir suma</string>
 </resources>

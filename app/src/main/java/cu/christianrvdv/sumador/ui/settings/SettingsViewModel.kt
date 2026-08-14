@@ -1,3 +1,4 @@
+// ui/settings/SettingsViewModel.kt
 package cu.christianrvdv.sumador.ui.settings
 
 import android.content.Context
@@ -23,7 +24,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         val SORT_ASC = booleanPreferencesKey("sort_asc")
         val AUTO_SAVE = booleanPreferencesKey("auto_save")
         val CONFIRM_CLEAR = booleanPreferencesKey("confirm_clear")
-        val LANGUAGE = stringPreferencesKey("language")  // Nueva clave
+        val LANGUAGE = stringPreferencesKey("language")
+        val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")  // NUEVO
     }
 
     private val _state = MutableStateFlow(SettingsState())
@@ -47,13 +49,15 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                         val confirmClear = prefs[Keys.CONFIRM_CLEAR] ?: true
                         val languageStr = prefs[Keys.LANGUAGE] ?: "SYSTEM"
                         val language = LanguageOption.valueOf(languageStr)
+                        val keepScreenOn = prefs[Keys.KEEP_SCREEN_ON] ?: false  // NUEVO
                         _state.value = SettingsState(
                             theme = theme,
                             currencySymbol = currency,
                             sortAscending = sortAsc,
                             autoSave = autoSave,
                             confirmClear = confirmClear,
-                            language = language
+                            language = language,
+                            keepScreenOn = keepScreenOn
                         )
                     } catch (e: Exception) {
                         Log.e("SettingsViewModel", "Error parsing settings", e)
@@ -112,7 +116,6 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    // Nuevo método para actualizar el idioma
     suspend fun updateLanguage(language: LanguageOption) {
         try {
             context.dataStore.edit { prefs ->
@@ -120,6 +123,17 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
             }
         } catch (e: Exception) {
             Log.e("SettingsViewModel", "Error saving language", e)
+        }
+    }
+
+    // ⭐ NUEVO MÉTODO
+    suspend fun updateKeepScreenOn(enabled: Boolean) {
+        try {
+            context.dataStore.edit { prefs ->
+                prefs[Keys.KEEP_SCREEN_ON] = enabled
+            }
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error saving keepScreenOn", e)
         }
     }
 

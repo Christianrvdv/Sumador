@@ -1,6 +1,7 @@
-// SumadorScreen.kt
 package cu.christianrvdv.sumador.ui.sumador
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -19,7 +20,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -29,8 +29,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cu.christianrvdv.sumador.R
-import cu.christianrvdv.sumador.data.database.Converters
-import cu.christianrvdv.sumador.data.database.SavedSumEntity
 import cu.christianrvdv.sumador.ui.settings.*
 import kotlinx.coroutines.launch
 import java.text.NumberFormat
@@ -48,6 +46,7 @@ fun SumadorScreen(
     val state by viewModel.state.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
@@ -74,11 +73,10 @@ fun SumadorScreen(
         }
 
     val totalFormateado = remember(state.total) {
-        NumberFormat.getIntegerInstance().format(state.total)
+        formatCurrency(state.total)
     }
     val totalBills = state.cantidades.values.sumOf { it.toIntOrNull() ?: 0 }
 
-    // Animación del total
     val totalScale by animateFloatAsState(
         targetValue = if (state.total > 0) 1.05f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy),
@@ -108,21 +106,15 @@ fun SumadorScreen(
                     }
                 },
                 actions = {
-                    // Botón Historial
                     IconButton(onClick = onNavigateToHistory) {
-                        Icon(
-                            Icons.Default.History,
-                            contentDescription = "Historial"
-                        )
+                        Icon(Icons.Default.History, contentDescription = "Historial")
                     }
-                    // Botón Acerca de
                     IconButton(onClick = { showAboutDialog = true }) {
                         Icon(
                             Icons.Default.Info,
                             contentDescription = stringResource(R.string.content_description_about)
                         )
                     }
-                    // Botón Configuración
                     IconButton(onClick = { showSettingsDialog = true }) {
                         Icon(
                             Icons.Default.Settings,
@@ -135,8 +127,7 @@ fun SumadorScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                modifier = Modifier.clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             )
         },
         bottomBar = {
@@ -150,17 +141,17 @@ fun SumadorScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .navigationBarsPadding() // Espacio para la barra de navegación
+                        .navigationBarsPadding()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(80.dp) // Altura visible del bottomBar
+                            .height(80.dp)
                             .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // Columna del total
+                        // Total
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -175,9 +166,7 @@ fun SumadorScreen(
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Text(
                                     text = "$totalFormateado ",
-                                    style = MaterialTheme.typography.headlineMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
+                                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                                     color = MaterialTheme.colorScheme.primary
                                 )
                                 Text(
@@ -188,7 +177,10 @@ fun SumadorScreen(
                                 if (totalBills > 0) {
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = stringResource(R.string.total_bills_short, totalBills),
+                                        text = stringResource(
+                                            R.string.total_bills_short,
+                                            totalBills
+                                        ),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -196,12 +188,35 @@ fun SumadorScreen(
                             }
                         }
 
-                        // Botones agrupados a la derecha
+                        // Botones
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Botón Guardar (solo si hay billetes)
+                            // Compartir
+                            if (hasBills) {
+                                FilledTonalIconButton(
+                                    onClick = {
+                                        shareCurrentSum(
+                                            context,
+                                            state,
+                                            settingsState.currencySymbol
+                                        )
+                                    },
+                                    colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                        containerColor = MaterialTheme.colorScheme.secondary,
+                                        contentColor = MaterialTheme.colorScheme.onSecondary
+                                    ),
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Share,
+                                        contentDescription = stringResource(R.string.share_sum)
+                                    )
+                                }
+                            }
+
+                            // Guardar
                             if (hasBills) {
                                 FilledTonalIconButton(
                                     onClick = { showSaveDialog = true },
@@ -218,7 +233,7 @@ fun SumadorScreen(
                                 }
                             }
 
-                            // Botón Limpiar (siempre visible)
+                            // Limpiar
                             FilledTonalIconButton(
                                 onClick = {
                                     if (settingsState.confirmClear) {
@@ -242,8 +257,7 @@ fun SumadorScreen(
                     }
                 }
             }
-        },
-        // Se eliminó el floatingActionButton
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -258,9 +272,7 @@ fun SumadorScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
                     Column(
                         modifier = Modifier
@@ -308,9 +320,7 @@ fun SumadorScreen(
                     BillInputRow(
                         denomination = denom,
                         value = state.cantidades[denom] ?: "",
-                        onValueChange = { newValue ->
-                            viewModel.updateCantidad(denom, newValue)
-                        },
+                        onValueChange = { newValue -> viewModel.updateCantidad(denom, newValue) },
                         currencySymbol = settingsState.currencySymbol.symbol
                     )
                 }
@@ -320,19 +330,14 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogo de confirmación de reset
+    // Diálogos
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
             title = { Text(stringResource(R.string.clear_confirmation_title)) },
             text = { Text(stringResource(R.string.clear_confirmation_text)) },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.resetear()
-                        showResetDialog = false
-                    }
-                ) {
+                TextButton(onClick = { viewModel.resetear(); showResetDialog = false }) {
                     Text(stringResource(R.string.clear_confirm))
                 }
             },
@@ -344,13 +349,9 @@ fun SumadorScreen(
         )
     }
 
-    // Diálogo de guardar suma
     if (showSaveDialog) {
         AlertDialog(
-            onDismissRequest = {
-                showSaveDialog = false
-                saveName = ""
-            },
+            onDismissRequest = { showSaveDialog = false; saveName = "" },
             title = { Text(stringResource(R.string.save_sum)) },
             text = {
                 Column(
@@ -372,13 +373,10 @@ fun SumadorScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Resumen de denominaciones
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(
                             modifier = Modifier
@@ -393,7 +391,6 @@ fun SumadorScreen(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
 
-                            // Filtrar solo denominaciones con cantidad > 0
                             val items = state.cantidades
                                 .filter { it.value.toIntOrNull() ?: 0 > 0 }
                                 .toList()
@@ -413,7 +410,7 @@ fun SumadorScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "$denom ${settingsState.currencySymbol.symbol}",
+                                            text = "${formatDenomination(denom)} ${settingsState.currencySymbol.symbol}",
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                         Text(
@@ -437,7 +434,7 @@ fun SumadorScreen(
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "${NumberFormat.getIntegerInstance().format(state.total)} ${settingsState.currencySymbol.symbol}",
+                                        text = "$totalFormateado ${settingsState.currencySymbol.symbol}",
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = MaterialTheme.colorScheme.primary
@@ -452,10 +449,12 @@ fun SumadorScreen(
                 TextButton(
                     onClick = {
                         val finalName = if (saveName.isNotBlank()) saveName else {
-                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                            val dateFormat =
+                                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                             dateFormat.format(Date())
                         }
-                        val denominationsMap = state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
+                        val denominationsMap =
+                            state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
                         viewModel.saveCurrentSum(
                             name = finalName,
                             total = state.total,
@@ -469,38 +468,59 @@ fun SumadorScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showSaveDialog = false
-                    saveName = ""
-                }) {
+                TextButton(onClick = { showSaveDialog = false; saveName = "" }) {
                     Text(stringResource(R.string.cancel))
                 }
             }
         )
     }
 
-    // Diálogo de configuración
     if (showSettingsDialog) {
         SettingsBottomSheet(
             settingsState = settingsState,
             onDismiss = { showSettingsDialog = false },
-            onThemeChange = { theme: ThemeOption ->
-                coroutineScope.launch { settingsViewModel.updateTheme(theme) }
+            onThemeChange = { theme -> coroutineScope.launch { settingsViewModel.updateTheme(theme) } },
+            onCurrencyChange = { currency ->
+                coroutineScope.launch {
+                    settingsViewModel.updateCurrency(
+                        currency
+                    )
+                }
             },
-            onCurrencyChange = { currency: CurrencySymbol ->
-                coroutineScope.launch { settingsViewModel.updateCurrency(currency) }
+            onSortChange = { ascending ->
+                coroutineScope.launch {
+                    settingsViewModel.updateSortOrder(
+                        ascending
+                    )
+                }
             },
-            onSortChange = { ascending: Boolean ->
-                coroutineScope.launch { settingsViewModel.updateSortOrder(ascending) }
+            onAutoSaveChange = { enabled ->
+                coroutineScope.launch {
+                    settingsViewModel.updateAutoSave(
+                        enabled
+                    )
+                }
             },
-            onAutoSaveChange = { enabled: Boolean ->
-                coroutineScope.launch { settingsViewModel.updateAutoSave(enabled) }
+            onConfirmClearChange = { enabled ->
+                coroutineScope.launch {
+                    settingsViewModel.updateConfirmClear(
+                        enabled
+                    )
+                }
             },
-            onConfirmClearChange = { enabled: Boolean ->
-                coroutineScope.launch { settingsViewModel.updateConfirmClear(enabled) }
+            onLanguageChange = { language ->
+                coroutineScope.launch {
+                    settingsViewModel.updateLanguage(
+                        language
+                    )
+                }
             },
-            onLanguageChange = { language: LanguageOption ->
-                coroutineScope.launch { settingsViewModel.updateLanguage(language) }
+            onKeepScreenOnChange = { enabled ->
+                coroutineScope.launch {
+                    settingsViewModel.updateKeepScreenOn(
+                        enabled
+                    )
+                }
             },
             onAboutClick = {
                 showSettingsDialog = false
@@ -509,11 +529,8 @@ fun SumadorScreen(
         )
     }
 
-    // Diálogo Acerca de
     if (showAboutDialog) {
-        AboutBottomSheet(
-            onDismiss = { showAboutDialog = false }
-        )
+        AboutBottomSheet(onDismiss = { showAboutDialog = false })
     }
 }
 
@@ -525,15 +542,9 @@ fun BillInputRow(
     currencySymbol: String
 ) {
     var textFieldValue by remember(value) { mutableStateOf(value) }
-
-    LaunchedEffect(value) {
-        if (textFieldValue != value) {
-            textFieldValue = value
-        }
-    }
+    LaunchedEffect(value) { if (textFieldValue != value) textFieldValue = value }
 
     val billCount = textFieldValue.toIntOrNull() ?: 0
-
     val scale by animateFloatAsState(
         targetValue = if (billCount > 0) 1f else 1f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy)
@@ -544,14 +555,12 @@ fun BillInputRow(
             .fillMaxWidth()
             .scale(scale),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-        border = if (billCount > 0)
-            BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary)
-        else
-            null
+        border = if (billCount > 0) BorderStroke(
+            1.5.dp,
+            MaterialTheme.colorScheme.primary
+        ) else null
     ) {
         Row(
             modifier = Modifier
@@ -565,23 +574,18 @@ fun BillInputRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Icon(
-                    Icons.Default.Money,
-                    contentDescription = null,
+                    Icons.Default.Money, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
-                    text = denomination.toString(),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    text = formatDenomination(denomination),
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = currencySymbol,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
                 )
             }
 
@@ -601,26 +605,22 @@ fun BillInputRow(
                     modifier = Modifier
                         .size(40.dp)
                         .background(
-                            color = if (billCount > 0)
-                                MaterialTheme.colorScheme.surfaceVariant
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            color = if (billCount > 0) MaterialTheme.colorScheme.surfaceVariant
+                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                             shape = RoundedCornerShape(50)
                         )
                 ) {
                     Icon(
                         Icons.Default.Remove,
                         contentDescription = stringResource(R.string.content_description_decrement),
-                        tint = if (billCount > 0)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        tint = if (billCount > 0) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                     )
                 }
 
                 OutlinedTextField(
                     value = textFieldValue,
-                    onValueChange = { newText: String ->
+                    onValueChange = { newText ->
                         if (newText.all { it.isDigit() } && newText.length <= 6) {
                             textFieldValue = newText
                             onValueChange(newText)
@@ -659,10 +659,7 @@ fun BillInputRow(
                     },
                     modifier = Modifier
                         .size(40.dp)
-                        .background(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(50)
-                        )
+                        .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
                 ) {
                     Icon(
                         Icons.Default.Add,
@@ -673,4 +670,35 @@ fun BillInputRow(
             }
         }
     }
+}
+
+fun formatCurrency(amount: Long): String {
+    return NumberFormat.getIntegerInstance().format(amount)
+}
+
+fun formatDenomination(denom: Int): String {
+    return denom.toString()
+}
+
+fun shareCurrentSum(context: Context, state: SumadorState, currency: CurrencySymbol) {
+    val sb = StringBuilder()
+    sb.append("💰 ${context.getString(R.string.total)}: ${formatCurrency(state.total)} ${currency.symbol}\n\n")
+    sb.append("${context.getString(R.string.detail_label)}:\n")
+    state.cantidades
+        .filter { it.value.toIntOrNull() ?: 0 > 0 }
+        .toList()
+        .sortedByDescending { (denom, _) -> denom }
+        .forEach { (denom, countStr) ->
+            val count = countStr.toIntOrNull() ?: 0
+            if (count > 0) {
+                val value = denom * count
+                sb.append("  ${formatDenomination(denom)} x $count = ${formatCurrency(value.toLong())}\n")
+            }
+        }
+    val shareText = sb.toString()
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, shareText)
+    }
+    context.startActivity(Intent.createChooser(intent, context.getString(R.string.share_sum)))
 }

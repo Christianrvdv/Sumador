@@ -1,5 +1,8 @@
+// ui/history/SavedSumsScreen.kt
 package cu.christianrvdv.sumador.ui.history
 
+import android.content.Intent
+import android.icu.text.NumberFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,14 +11,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -36,16 +38,30 @@ fun SavedSumsScreen(
     val savedSums by viewModel.allSavedSums.collectAsState(initial = emptyList())
     var selectedSum by remember { mutableStateOf<SavedSumEntity?>(null) }
 
+    // Estado de búsqueda
+    var searchText by remember { mutableStateOf("") }
+    var showFilterDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    // Aplicar filtro de nombre en tiempo real
+    LaunchedEffect(searchText) {
+        val name = if (searchText.isBlank()) null else searchText
+        // Mantener otros filtros si los hubiera
+        viewModel.setFilter(
+            name = name,
+            dateFrom = null, // Podrías almacenarlos en otro estado
+            dateTo = null,
+            totalMin = null,
+            totalMax = null
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.History,
-                            contentDescription = null,
-                            modifier = Modifier.size(28.dp)
-                        )
+                        Icon(Icons.Default.History, contentDescription = null, modifier = Modifier.size(28.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.history_title))
                     }
@@ -55,65 +71,141 @@ fun SavedSumsScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    // Botón para limpiar filtros
+                    IconButton(onClick = {
+                        viewModel.clearFilters()
+                        searchText = ""
+                    }) {
+                        Icon(Icons.Default.Clear, contentDescription = "Clear filters")
+                    }
+                    // Botón para abrir diálogo de filtros avanzados
+                    IconButton(onClick = { showFilterDialog = true }) {
+                        Icon(Icons.Default.FilterList, contentDescription = "Filters")
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
+                    actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                modifier = Modifier
-                    .clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+                modifier = Modifier.clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
             )
         }
     ) { padding ->
-        if (savedSums.isEmpty()) {
-            Box(
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+            // SearchBar
+            SearchBar(
+                query = searchText,
+                onQueryChange = { searchText = it },
+                onSearch = { },
+                active = false,
+                onActiveChange = { },
+                placeholder = { Text(stringResource(R.string.search_hint)) },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.history_empty),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // No se usa para resultados en este caso
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(savedSums) { sum ->
-                    SavedSumItem(
-                        sum = sum,
-                        onItemClick = { selectedSum = sum },
-                        onDelete = { viewModel.delete(sum) }
+
+            if (savedSums.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(R.string.history_empty),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(savedSums) { sum ->
+                        SavedSumItem(
+                            sum = sum,
+                            onItemClick = { selectedSum = sum },
+                            onDelete = { viewModel.delete(sum) },
+                            onShare = {
+                                shareSum(context, sum)
+                            }
+                        )
+                    }
                 }
             }
         }
     }
 
-    // Diálogo de detalle como ModalBottomSheet
+    // Diálogo de filtros avanzados (puedes implementarlo más tarde)
+    if (showFilterDialog) {
+        // Aquí podrías mostrar un diálogo con DatePicker y campos numéricos
+        // Por simplicidad, solo lo cerramos
+        AlertDialog(
+            onDismissRequest = { showFilterDialog = false },
+            title = { Text("Filtros avanzados") },
+            text = { Text("Implementación pendiente (fechas y totales)") },
+            confirmButton = {
+                TextButton(onClick = { showFilterDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    // BottomSheet de detalle (ya existente, añado botón compartir)
     selectedSum?.let { sum ->
         SavedSumDetailBottomSheet(
             savedSum = sum,
             onDismiss = { selectedSum = null },
             onUpdateName = { newName ->
                 viewModel.update(sum.copy(name = newName))
-            }
+            },
+            onShare = { shareSum(context, sum) }
         )
     }
+}
+
+// Función para compartir una suma
+fun shareSum(context: android.content.Context, sum: SavedSumEntity) {
+    val converter = Converters()
+    val denominations = converter.fromStringToMap(sum.denominationsMap)
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+    val sb = StringBuilder()
+    sb.append("📊 ${sum.name}\n")
+    sb.append("📅 ${dateFormat.format(sum.timestamp)}\n")
+    sb.append("💰 Total: ${formatCurrency(sum.total)}\n\n")
+    sb.append("Detalle:\n")
+    denominations.entries.sortedByDescending { it.key }.forEach { (denom, count) ->
+        if (count > 0) {
+            sb.append("  $denom x $count = ${denom * count}\n")
+        }
+    }
+    val shareText = sb.toString()
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, shareText)
+    }
+    context.startActivity(Intent.createChooser(intent, "Compartir suma"))
+}
+
+// Función auxiliar para formatear moneda en céntimos
+fun formatCurrency(amount: Long): String {
+    return NumberFormat.getIntegerInstance().format(amount)
 }
 
 @Composable
 fun SavedSumItem(
     sum: SavedSumEntity,
     onItemClick: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onShare: () -> Unit
 ) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
@@ -147,12 +239,15 @@ fun SavedSumItem(
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "${sum.total} ${CurrencySymbol.PESO.symbol}",
+                    text = formatCurrency(sum.total), // Cambio aquí
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
+                IconButton(onClick = onShare) {
+                    Icon(Icons.Default.Share, contentDescription = "Share")
+                }
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Default.Delete, contentDescription = "Delete")
                 }
@@ -161,13 +256,15 @@ fun SavedSumItem(
     }
 }
 
+// Actualizar SavedSumDetailBottomSheet para usar formatCurrency y añadir onShare
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SavedSumDetailBottomSheet(
     savedSum: SavedSumEntity,
     onDismiss: () -> Unit,
-    onUpdateName: (String) -> Unit
-) {
+    onUpdateName: (String) -> Unit,
+    onShare: () -> Unit
+)  {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val denominations = Converters().fromStringToMap(savedSum.denominationsMap)
 
@@ -214,7 +311,7 @@ fun SavedSumDetailBottomSheet(
                     )
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        text = stringResource(R.string.total_label, "${savedSum.total} ${CurrencySymbol.PESO.symbol}"),
+                        text = stringResource(R.string.total_label, "${formatCurrency(savedSum.total)} ${CurrencySymbol.PESO.symbol}"),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

@@ -1,9 +1,8 @@
+// ui/settings/SettingsState.kt
 package cu.christianrvdv.sumador.ui.settings
 
 enum class ThemeOption {
-    LIGHT,
-    DARK,
-    SYSTEM
+    LIGHT, DARK, SYSTEM
 }
 
 enum class CurrencySymbol(val symbol: String) {
@@ -20,5 +19,6 @@ data class SettingsState(
     val sortAscending: Boolean = true,
     val autoSave: Boolean = true,
     val confirmClear: Boolean = true,
-    val language: LanguageOption = LanguageOption.SYSTEM
+    val language: LanguageOption = LanguageOption.SYSTEM,
+    val keepScreenOn: Boolean = false 
 )

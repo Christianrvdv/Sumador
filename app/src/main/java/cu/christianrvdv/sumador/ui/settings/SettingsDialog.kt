@@ -28,6 +28,7 @@ fun SettingsBottomSheet(
     onAutoSaveChange: (Boolean) -> Unit,
     onConfirmClearChange: (Boolean) -> Unit,
     onLanguageChange: (LanguageOption) -> Unit,
+    onKeepScreenOnChange: (Boolean) -> Unit,   // <-- NUEVO PARÁMETRO
     onAboutClick: () -> Unit
 ) {
     ModalBottomSheet(
@@ -62,12 +63,12 @@ fun SettingsBottomSheet(
                         selected = settingsState.theme == option,
                         label = when (option) {
                             ThemeOption.LIGHT -> stringResource(R.string.theme_light)
-                            ThemeOption.DARK  -> stringResource(R.string.theme_dark)
+                            ThemeOption.DARK -> stringResource(R.string.theme_dark)
                             ThemeOption.SYSTEM -> stringResource(R.string.theme_system)
                         },
                         icon = when (option) {
                             ThemeOption.LIGHT -> Icons.Default.LightMode
-                            ThemeOption.DARK  -> Icons.Default.DarkMode
+                            ThemeOption.DARK -> Icons.Default.DarkMode
                             ThemeOption.SYSTEM -> Icons.Default.DeviceUnknown
                         },
                         onClick = { onThemeChange(option) }
@@ -85,12 +86,12 @@ fun SettingsBottomSheet(
                         selected = settingsState.currencySymbol == currency,
                         label = when (currency) {
                             CurrencySymbol.PESO -> stringResource(R.string.currency_peso)
-                            CurrencySymbol.USD  -> stringResource(R.string.currency_usd)
+                            CurrencySymbol.USD -> stringResource(R.string.currency_usd)
                             CurrencySymbol.EURO -> stringResource(R.string.currency_euro)
                         },
                         icon = when (currency) {
                             CurrencySymbol.PESO -> Icons.Default.MonetizationOn
-                            CurrencySymbol.USD  -> Icons.Default.AttachMoney
+                            CurrencySymbol.USD -> Icons.Default.AttachMoney
                             CurrencySymbol.EURO -> Icons.Default.Euro
                         },
                         onClick = { onCurrencyChange(currency) }
@@ -109,12 +110,12 @@ fun SettingsBottomSheet(
                         label = when (option) {
                             LanguageOption.ENGLISH -> stringResource(R.string.language_english)
                             LanguageOption.SPANISH -> stringResource(R.string.language_spanish)
-                            LanguageOption.SYSTEM  -> stringResource(R.string.language_system)
+                            LanguageOption.SYSTEM -> stringResource(R.string.language_system)
                         },
                         icon = when (option) {
                             LanguageOption.ENGLISH -> Icons.Default.Translate
                             LanguageOption.SPANISH -> Icons.Default.Translate
-                            LanguageOption.SYSTEM  -> Icons.Default.DeviceUnknown
+                            LanguageOption.SYSTEM -> Icons.Default.DeviceUnknown
                         },
                         onClick = { onLanguageChange(option) }
                     )
@@ -140,7 +141,7 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // --- Sección Switches ---
+            // --- Sección Switches (unificada) ---
             SettingsSection(
                 icon = Icons.Default.ToggleOn,
                 title = stringResource(R.string.settings_options_section)
@@ -156,6 +157,13 @@ fun SettingsBottomSheet(
                     checked = settingsState.confirmClear,
                     onCheckedChange = onConfirmClearChange,
                     description = stringResource(R.string.confirm_clear_description)
+                )
+                // ⭐ NUEVO SWITCH
+                SettingsSwitchItem(
+                    label = stringResource(R.string.keep_screen_on_label),
+                    checked = settingsState.keepScreenOn,
+                    onCheckedChange = onKeepScreenOnChange,
+                    description = stringResource(R.string.keep_screen_on_description)
                 )
             }
 
@@ -195,7 +203,7 @@ fun SettingsBottomSheet(
     }
 }
 
-// Componentes auxiliares
+// Componentes auxiliares (sin cambios)
 @Composable
 private fun SettingsSection(
     icon: ImageVector,

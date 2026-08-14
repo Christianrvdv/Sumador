@@ -98,4 +98,10 @@
 
     <string name="edit_name_title">Edit name</string>
     <string name="edit_name_message">Enter the new name for this saved sum:</string>
+
+    <string name="search_hint">Search by name...</string>
+    <string name="share">Share</string>
+    <string name="keep_screen_on_label">Keep screen on</string>
+    <string name="keep_screen_on_description">Prevents screen from turning off while using the app</string>
+    <string name="share_sum">Share sum</string>
 </resources>

@@ -1,19 +1,14 @@
-// MainActivity.kt
 package cu.christianrvdv.sumador
 
-import android.content.Context
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.*
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -42,9 +37,15 @@ class MainActivity : ComponentActivity() {
             )
             val settingsState by settingsViewModel.state.collectAsState()
 
-            // Aplicar el idioma cada vez que cambie en el estado
+            // Aplicar idioma
             LaunchedEffect(settingsState.language) {
                 applyLanguage(settingsState.language)
+            }
+
+            // Mantener pantalla activa
+            val view = LocalView.current
+            LaunchedEffect(settingsState.keepScreenOn) {
+                view.setKeepScreenOn(settingsState.keepScreenOn)
             }
 
             val useDarkTheme = when (settingsState.theme) {
@@ -55,7 +56,6 @@ class MainActivity : ComponentActivity() {
 
             val navController = rememberNavController()
 
-            // Forzar recomposición completa al cambiar el idioma
             key(settingsState.language) {
                 SumadorTheme(
                     darkTheme = useDarkTheme,
@@ -63,7 +63,6 @@ class MainActivity : ComponentActivity() {
                 ) {
                     NavHost(navController, startDestination = "sumador") {
                         composable("sumador") {
-                            // Sin Scaffold externo: SumadorScreen maneja su propio Scaffold
                             SumadorScreen(
                                 settingsViewModel = settingsViewModel,
                                 onNavigateToHistory = { navController.navigate("history") }
@@ -80,10 +79,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * Aplica el idioma seleccionado a la configuración de recursos de la app.
-     * Si el idioma cambia, recrea la actividad para que los cambios surtan efecto.
-     */
     private fun applyLanguage(language: LanguageOption) {
         val desiredLocale = when (language) {
             LanguageOption.ENGLISH -> Locale.ENGLISH
@@ -91,28 +86,21 @@ class MainActivity : ComponentActivity() {
             LanguageOption.SYSTEM -> Locale.getDefault()
         }
 
-        // Obtener el locale actual de la configuración de recursos
         val currentLocale = resources.configuration.locales[0] ?: Locale.getDefault()
-
-        // Si el locale deseado ya está aplicado, no hacer nada
         if (currentLocale == desiredLocale) {
             Log.d("MainActivity", "Idioma ya aplicado: $desiredLocale")
             return
         }
 
         Log.d("MainActivity", "Aplicando idioma: $language -> locale: $desiredLocale")
-
-        // Establecer el locale por defecto (para formateo, etc.)
         if (language != LanguageOption.SYSTEM) {
             Locale.setDefault(desiredLocale)
         }
 
-        // Actualizar la configuración de recursos
         val config = Configuration(resources.configuration)
         config.setLocale(desiredLocale)
         resources.updateConfiguration(config, resources.displayMetrics)
 
-        // Forzar el recreado de la actividad para que todos los recursos se recarguen
         recreate()
     }
 }

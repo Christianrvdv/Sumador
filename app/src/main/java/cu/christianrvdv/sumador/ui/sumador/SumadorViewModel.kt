@@ -30,7 +30,6 @@ class SumadorViewModel @Inject constructor(
     private val savedSumDao: SavedSumDao
 ) : ViewModel() {
 
-    // Mapa mutable de cantidades para la moneda actual
     private val _cantidades = mutableStateMapOf<Int, String>()
 
     private val _state = MutableStateFlow(SumadorState(cantidades = emptyMap(), total = 0L))
@@ -39,17 +38,12 @@ class SumadorViewModel @Inject constructor(
     private var currentCurrency: CurrencySymbol = CurrencySymbol.PESO
     private var autoSaveEnabled = true
 
-    /**
-     * Establece la moneda actual y carga los datos guardados para esa moneda.
-     * Si la moneda cambia, se limpia el mapa y se recargan los datos.
-     */
     fun setCurrency(currency: CurrencySymbol) {
         if (currentCurrency != currency) {
             currentCurrency = currency
             _cantidades.clear()
             cargarCantidades(currency)
         } else {
-            // Si es la misma moneda, pero queremos recargar (por ejemplo, al iniciar)
             cargarCantidades(currency)
         }
     }
