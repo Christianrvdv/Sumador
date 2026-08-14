@@ -416,7 +416,7 @@ fun SumadorScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "${formatDenomination(denom)} ${settingsState.currencySymbol.symbol}",
+                                            text = "${formatDenomination(denom)} ${if (denom < 100) "" else settingsState.currencySymbol.symbol}",
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                         Text(
@@ -582,10 +582,14 @@ fun BillInputRow(
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    text = currencySymbol,
-                    style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
-                )
+                // Mostrar símbolo de moneda solo si es billete (denom >= 100)
+                if (denomination >= 100) {
+                    Text(
+                        text = currencySymbol,
+                        style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    )
+                }
+                // Para monedas, no mostramos el símbolo de moneda porque ya incluimos "¢"
             }
 
             Row(
@@ -673,19 +677,30 @@ fun BillInputRow(
 
 // ==================== FUNCIONES DE FORMATO ====================
 
+/**
+ * Formatea un monto en céntimos a un string con dos decimales.
+ * Usado para totales y productos en la UI.
+ * Ej: 1250 → "12.50", 5000 → "50.00"
+ */
 fun formatCurrency(amount: Long): String {
     val whole = amount / 100
     val cents = amount % 100
     return if (cents == 0L) whole.toString() else "$whole.${String.format("%02d", cents)}"
 }
 
+/**
+ * Formatea una denominación para mostrarla en la interfaz.
+ * - Si es múltiplo de 100 (billete): muestra el valor en la unidad principal (ej. 500 → "5").
+ * - Si es < 100 (moneda): muestra el valor entero en céntimos seguido de "¢" (ej. 50 → "50¢").
+ * - Si es un valor con céntimos no múltiplo de 100 (poco común), muestra con dos decimales.
+ */
 fun formatDenomination(denom: Int): String {
     return if (denom % 100 == 0) {
+        // Billete: dividir entre 100
         (denom / 100).toString()
     } else {
-        val euros = denom / 100
-        val cents = denom % 100
-        if (euros == 0) "0.$cents" else "$euros.${String.format("%02d", cents)}"
+        // Moneda o valor fraccionario: mostrar con "¢"
+        "$denom¢"
     }
 }
 
@@ -703,6 +718,7 @@ fun shareCurrentSum(context: Context, state: SumadorState, currency: CurrencySym
             val count = countStr.toIntOrNull() ?: 0
             if (count > 0) {
                 val value = denom * count
+                // Mostrar la denominación formateada y el valor total con formatCurrency
                 sb.append("  ${formatDenomination(denom)} x $count = ${formatCurrency(value.toLong())}\n")
             }
         }
