@@ -50,7 +50,7 @@
     <!-- About screen -->
     <string name="about_title">About Sumador</string>
     <string name="about_version">Version %s</string>
-    <string name="about_description">Sumador is an app for counting bills and coins quickly and easily. Ideal for merchants, cashiers, and anyone handling cash.</string>
+    <string name="about_description">Sumador is an app for counting bills and coins quickly and easily. It includes a history of saved sums with search and advanced filters, and allows you to share the results. Ideal for merchants, cashiers, and anyone handling cash.</string>
     <string name="about_features_title">Main features:</string>
     <string name="about_feature_currency">Multiple currencies (Peso, USD, Euro)</string>
     <string name="about_feature_sort">Ascending/descending bill order</string>
@@ -64,6 +64,10 @@
     <string name="about_developer_name">Christian R Vazquez</string>
     <string name="about_portfolio_button">Portfolio</string>
     <string name="about_close_button">Close</string>
+    <string name="about_feature_history">History with search and advanced filters</string>
+    <string name="about_feature_share">Share sums</string>
+    <string name="about_feature_keep_screen_on">Keep screen on option</string>
+    <string name="about_feature_coins">Coin support (bills and coins)</string>
 
     <!-- Content descriptions for accessibility -->
     <string name="content_description_about">About</string>

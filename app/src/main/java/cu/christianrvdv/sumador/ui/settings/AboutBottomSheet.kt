@@ -26,9 +26,9 @@ fun AboutBottomSheet(
 ) {
     val context = LocalContext.current
     val versionName = try {
-        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.0.0"
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.3.0"
     } catch (_: PackageManager.NameNotFoundException) {
-        "1.2.0"
+        "1.3.0"
     }
 
     ModalBottomSheet(
@@ -44,6 +44,7 @@ fun AboutBottomSheet(
                 .padding(bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Título y versión
             Column {
                 Text(
                     text = stringResource(R.string.about_title),
@@ -58,6 +59,7 @@ fun AboutBottomSheet(
                 )
             }
 
+            // Descripción actualizada
             Text(
                 text = stringResource(R.string.about_description),
                 style = MaterialTheme.typography.bodyMedium,
@@ -65,6 +67,7 @@ fun AboutBottomSheet(
                 modifier = Modifier.padding(top = 4.dp)
             )
 
+            // Lista de características (ampliada)
             Text(
                 text = stringResource(R.string.about_features_title),
                 style = MaterialTheme.typography.labelLarge,
@@ -72,12 +75,17 @@ fun AboutBottomSheet(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
+            // Características existentes + nuevas
             listOf(
                 R.string.about_feature_currency,
+                R.string.about_feature_coins,
                 R.string.about_feature_sort,
                 R.string.about_feature_autosave,
                 R.string.about_feature_themes,
-                R.string.about_feature_languages
+                R.string.about_feature_languages,
+                R.string.about_feature_history,
+                R.string.about_feature_share,
+                R.string.about_feature_keep_screen_on
             ).forEach { featureResId ->
                 Row(
                     modifier = Modifier
@@ -102,6 +110,7 @@ fun AboutBottomSheet(
 
             Spacer(Modifier.height(8.dp))
 
+            // Código abierto (sin cambios)
             Text(
                 text = stringResource(R.string.about_open_source_title),
                 style = MaterialTheme.typography.labelLarge,
@@ -147,6 +156,7 @@ fun AboutBottomSheet(
 
             Spacer(Modifier.height(8.dp))
 
+            // Desarrollador (sin cambios)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -196,6 +206,7 @@ fun AboutBottomSheet(
                 }
             }
 
+            // Botón de cierre (sin cambios)
             Button(
                 onClick = onDismiss,
                 modifier = Modifier

@@ -50,7 +50,7 @@
     <!-- About screen -->
     <string name="about_title">Acerca de Sumador</string>
     <string name="about_version">Versión %s</string>
-    <string name="about_description">Sumador es una aplicación para contar billetes y monedas de forma rápida y sencilla. Ideal para comerciantes, cajeros y cualquier persona que maneje efectivo.</string>
+    <string name="about_description">Sumador es una aplicación para contar billetes y monedas de forma rápida y sencilla. Incluye un historial de sumas guardadas con búsqueda y filtros avanzados, y permite compartir los resultados. Ideal para comerciantes, cajeros y cualquier persona que maneje efectivo.</string>
     <string name="about_features_title">Principales características:</string>
     <string name="about_feature_currency">Múltiples monedas (Peso, USD, Euro)</string>
     <string name="about_feature_sort">Orden ascendente/descendente de billetes</string>
@@ -64,6 +64,10 @@
     <string name="about_developer_name">Christian R Vazquez</string>
     <string name="about_portfolio_button">Portafolio</string>
     <string name="about_close_button">Cerrar</string>
+    <string name="about_feature_history">Historial con búsqueda y filtros avanzados</string>
+    <string name="about_feature_share">Compartir sumas</string>
+    <string name="about_feature_keep_screen_on">Opción de mantener pantalla activa</string>
+    <string name="about_feature_coins">Soporte para monedas (billetes y monedas)</string>
 
     <!-- Content descriptions for accessibility -->
     <string name="content_description_about">Acerca de</string>
