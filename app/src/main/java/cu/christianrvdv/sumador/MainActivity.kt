@@ -167,7 +167,17 @@ class MainActivity : ComponentActivity() {
                 AlertDialog(
                     onDismissRequest = { showDownloadStartedDialog = false },
                     title = { Text("Descarga iniciada") },
-                    text = { Text("La actualización se está descargando en segundo plano. Recibirás una notificación cuando termine.") },
+                    text = {
+                        Column {
+                            Text("La actualización se está descargando en segundo plano. Recibirás una notificación cuando termine.")
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Si la instalación no comienza automáticamente, ve a Configuración > Aplicaciones > Sumador > Instalar desde orígenes desconocidos y actívalo.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
                     confirmButton = {
                         TextButton(onClick = { showDownloadStartedDialog = false }) {
                             Text("Aceptar")

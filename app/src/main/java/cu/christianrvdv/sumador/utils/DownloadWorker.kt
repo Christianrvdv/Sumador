@@ -8,6 +8,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -54,17 +55,16 @@ class DownloadWorker(
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-        // Verificar si tenemos permiso para mostrar notificaciones (Android 13+)
+        // Verificar permiso de notificaciones (Android 13+)
         val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 applicationContext,
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
         } else {
-            true // En versiones anteriores no se necesita permiso
+            true
         }
 
-        // Solo creamos notificación si tenemos permiso
         val builder = if (hasNotificationPermission) {
             createNotificationBuilder()
         } else {
@@ -77,7 +77,7 @@ class DownloadWorker(
 
         val apkFile = File(updatesDir, "sumador_v${version}.apk")
 
-        // Si el APK ya existe, saltamos la descarga
+        // Si el APK ya existe, instalar directamente
         if (apkFile.exists()) {
             if (builder != null) {
                 builder.setContentText("APK ya descargado, instalando...")
@@ -88,7 +88,7 @@ class DownloadWorker(
             return Result.success()
         }
 
-        // Iniciamos la notificación de progreso (si hay permiso)
+        // Mostrar notificación de progreso
         if (builder != null) {
             builder.setProgress(100, 0, true)
             notificationManager.notify(NOTIFICATION_ID, builder.build())
@@ -167,6 +167,29 @@ class DownloadWorker(
     }
 
     private fun installApk(apkFile: File) {
+        // Verificar si podemos solicitar instalación de paquetes (Android O+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (!applicationContext.packageManager.canRequestPackageInstalls()) {
+                // No tenemos permiso, abrir configuración para que el usuario lo habilite
+                val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    data = Uri.parse("package:${applicationContext.packageName}")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                applicationContext.startActivity(intent)
+
+                // Mostrar notificación informativa (si hay permiso de notificaciones)
+                val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                val builder = NotificationCompat.Builder(applicationContext, "update_channel")
+                    .setContentTitle("Instalación bloqueada")
+                    .setContentText("Habilita 'Instalar desde orígenes desconocidos' para esta app en Configuración.")
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setAutoCancel(true)
+                notificationManager.notify(NOTIFICATION_ID + 1, builder.build())
+                return
+            }
+        }
+
+        // Si tenemos permiso, proceder con la instalación
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             FileProvider.getUriForFile(
                 applicationContext,
