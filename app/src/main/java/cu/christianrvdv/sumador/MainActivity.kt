@@ -106,13 +106,25 @@ class MainActivity : ComponentActivity() {
             var showDownloadStartedDialog by remember { mutableStateOf(false) }
             var showNoUpdateDialog by remember { mutableStateOf(false) }
             var showUpdateErrorDialog by remember { mutableStateOf(false) }
+            var showNetworkErrorDialog by remember { mutableStateOf(false) }
 
             // Verificar actualizaciones al inicio
             LaunchedEffect(Unit) {
-                val info = updateManager.checkForUpdate()
-                if (info != null) {
-                    updateInfo = info
-                    showUpdateDialog = true
+                val result = updateManager.checkForUpdate()
+                when (result) {
+                    is UpdateManager.UpdateResult.Success -> {
+                        updateInfo = result.info
+                        showUpdateDialog = true
+                    }
+                    UpdateManager.UpdateResult.NoUpdate -> {
+                        showNoUpdateDialog = true
+                    }
+                    UpdateManager.UpdateResult.NetworkError -> {
+                        showNetworkErrorDialog = true
+                    }
+                    is UpdateManager.UpdateResult.Error -> {
+                        showUpdateErrorDialog = true
+                    }
                 }
             }
 
@@ -120,13 +132,22 @@ class MainActivity : ComponentActivity() {
             suspend fun checkForUpdatesManually() {
                 showCheckingDialog = true
                 try {
-                    val info = updateManager.checkForUpdate()
+                    val result = updateManager.checkForUpdate()
                     showCheckingDialog = false
-                    if (info != null) {
-                        updateInfo = info
-                        showUpdateDialog = true
-                    } else {
-                        showNoUpdateDialog = true
+                    when (result) {
+                        is UpdateManager.UpdateResult.Success -> {
+                            updateInfo = result.info
+                            showUpdateDialog = true
+                        }
+                        UpdateManager.UpdateResult.NoUpdate -> {
+                            showNoUpdateDialog = true
+                        }
+                        UpdateManager.UpdateResult.NetworkError -> {
+                            showNetworkErrorDialog = true
+                        }
+                        is UpdateManager.UpdateResult.Error -> {
+                            showUpdateErrorDialog = true
+                        }
                     }
                 } catch (e: Exception) {
                     showCheckingDialog = false
@@ -225,14 +246,28 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            // 5. Error al buscar actualizaciones
+            // 5. Error al buscar actualizaciones (genérico)
             if (showUpdateErrorDialog) {
                 AlertDialog(
                     onDismissRequest = { showUpdateErrorDialog = false },
                     title = { Text("Error") },
-                    text = { Text("No se pudo comprobar si hay actualizaciones. Verifica tu conexión a Internet.") },
+                    text = { Text("Ocurrió un error al verificar las actualizaciones. Inténtalo de nuevo más tarde.") },
                     confirmButton = {
                         TextButton(onClick = { showUpdateErrorDialog = false }) {
+                            Text("Aceptar")
+                        }
+                    }
+                )
+            }
+
+            // 6. Error de red
+            if (showNetworkErrorDialog) {
+                AlertDialog(
+                    onDismissRequest = { showNetworkErrorDialog = false },
+                    title = { Text("Sin conexión") },
+                    text = { Text("No se pudo conectar con el servidor de actualizaciones. Verifica tu conexión a Internet e inténtalo de nuevo.") },
+                    confirmButton = {
+                        TextButton(onClick = { showNetworkErrorDialog = false }) {
                             Text("Aceptar")
                         }
                     }

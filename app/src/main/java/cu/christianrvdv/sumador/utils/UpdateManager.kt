@@ -2,12 +2,13 @@ package cu.christianrvdv.sumador.utils
 
 import android.content.Context
 import android.util.Log
-import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.UnknownHostException
 
 class UpdateManager(private val context: Context) {
 
@@ -16,7 +17,15 @@ class UpdateManager(private val context: Context) {
         private const val GITHUB_API_URL = "https://api.github.com/repos/christianrvdv/Sumador/releases/latest"
     }
 
-    suspend fun checkForUpdate(): UpdateInfo? = withContext(Dispatchers.IO) {
+    // Estados de la verificación
+    sealed class UpdateResult {
+        data class Success(val info: UpdateInfo) : UpdateResult()
+        data class Error(val throwable: Throwable) : UpdateResult()
+        object NoUpdate : UpdateResult()
+        object NetworkError : UpdateResult()
+    }
+
+    suspend fun checkForUpdate(): UpdateResult = withContext(Dispatchers.IO) {
         try {
             val url = URL(GITHUB_API_URL)
             val connection = url.openConnection() as HttpURLConnection
@@ -27,37 +36,61 @@ class UpdateManager(private val context: Context) {
             val responseCode = connection.responseCode
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 Log.e(TAG, "Error en la respuesta de GitHub: $responseCode")
-                return@withContext null
+                return@withContext UpdateResult.Error(Exception("HTTP $responseCode"))
             }
 
             val response = connection.inputStream.bufferedReader().use { it.readText() }
             connection.disconnect()
 
-            val release = Gson().fromJson(response, Release::class.java)
-            val latestVersion = release.tagName.removePrefix("v")
+            // Log de la respuesta (opcional)
+            Log.d(TAG, "Respuesta de GitHub: $response")
+
+            val gson = GsonBuilder().setLenient().create()
+            val release = gson.fromJson(response, Release::class.java)
+
+            val tagName = release.tagName
+            if (tagName.isNullOrEmpty()) {
+                Log.e(TAG, "tag_name es null o vacío en la respuesta")
+                return@withContext UpdateResult.Error(Exception("tag_name missing"))
+            }
+            val latestVersion = tagName.removePrefix("v")
             val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0"
 
+            Log.d(TAG, "Versión actual: $currentVersion, última: $latestVersion")
+
             if (compareVersions(latestVersion, currentVersion) > 0) {
-                val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
+                val assets = release.assets
+                if (assets.isNullOrEmpty()) {
+                    Log.e(TAG, "No hay assets en el release")
+                    return@withContext UpdateResult.Error(Exception("No assets found"))
+                }
+                val apkAsset = assets.firstOrNull { it.name.endsWith(".apk") }
                 if (apkAsset != null) {
                     Log.d(TAG, "Nueva versión $latestVersion, URL descarga: ${apkAsset.browserDownloadUrl}")
-                    return@withContext UpdateInfo(
-                        version = latestVersion,
-                        downloadUrl = apkAsset.browserDownloadUrl
+                    return@withContext UpdateResult.Success(
+                        UpdateInfo(
+                            version = latestVersion,
+                            downloadUrl = apkAsset.browserDownloadUrl
+                        )
                     )
                 } else {
                     Log.e(TAG, "No se encontró un archivo APK en los assets")
+                    return@withContext UpdateResult.Error(Exception("No APK found"))
                 }
             } else {
                 Log.d(TAG, "La versión actual ($currentVersion) ya es la más reciente.")
+                return@withContext UpdateResult.NoUpdate
             }
+        } catch (e: UnknownHostException) {
+            Log.e(TAG, "Error de red al verificar actualización", e)
+            return@withContext UpdateResult.NetworkError
         } catch (e: Exception) {
             Log.e(TAG, "Error al verificar actualización", e)
+            e.printStackTrace()
+            return@withContext UpdateResult.Error(e)
         }
-        return@withContext null
     }
 
-    // NUEVO: se pasa también la versión
     fun startBackgroundDownload(downloadUrl: String, version: String) {
         DownloadWorker.start(context, downloadUrl, version)
     }
@@ -75,8 +108,8 @@ class UpdateManager(private val context: Context) {
     }
 
     data class Release(
-        @SerializedName("tag_name") val tagName: String,
-        val assets: List<Asset>
+        @SerializedName("tag_name") val tagName: String?,
+        val assets: List<Asset>?
     )
 
     data class Asset(
