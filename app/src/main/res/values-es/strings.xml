@@ -169,4 +169,17 @@
 
     <string name="update_dialog_network_error_title">Sin conexión</string>
     <string name="update_dialog_network_error_message">No se pudo conectar con el servidor de actualizaciones. Verifica tu conexión a Internet e inténtalo de nuevo.</string>
+
+    <!-- Denomination management -->
+    <string name="denominations_section_title">Denominaciones</string>
+    <string name="manage_denominations_button">Gestionar denominaciones</string>
+    <string name="manage_denominations_title">Gestionar denominaciones</string>
+    <string name="add_denomination">Agregar denominación</string>
+    <string name="edit_denomination">Editar denominación</string>
+    <string name="delete_denomination_confirmation">Eliminar denominación</string>
+    <string name="delete_denomination_message">¿Eliminar la denominación %s?</string>
+    <string name="reset_to_defaults">Restablecer predeterminadas</string>
+    <string name="denomination_value_label">Valor de la denominación</string>
+    <string name="no_denominations_message">Sin denominaciones personalizadas</string>
+    <string name="add_denomination_hint">Toca + para agregar una nueva</string>
 </resources>

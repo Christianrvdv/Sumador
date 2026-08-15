@@ -169,4 +169,17 @@
 
     <string name="update_dialog_network_error_title">No connection</string>
     <string name="update_dialog_network_error_message">Could not connect to the update server. Check your internet connection and try again.</string>
+
+    <!-- Denomination management -->
+    <string name="denominations_section_title">Denominations</string>
+    <string name="manage_denominations_button">Manage denominations</string>
+    <string name="manage_denominations_title">Manage Denominations</string>
+    <string name="add_denomination">Add denomination</string>
+    <string name="edit_denomination">Edit denomination</string>
+    <string name="delete_denomination_confirmation">Delete denomination</string>
+    <string name="delete_denomination_message">Delete denomination %s?</string>
+    <string name="reset_to_defaults">Reset to defaults</string>
+    <string name="denomination_value_label">Denomination value</string>
+    <string name="no_denominations_message">No custom denominations</string>
+    <string name="add_denomination_hint">Tap + to add a new denomination</string>
 </resources>
