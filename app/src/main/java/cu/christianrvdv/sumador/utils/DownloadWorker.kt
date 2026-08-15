@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -98,8 +99,8 @@ class DownloadWorker(
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
-            connection.connectTimeout = 10000
-            connection.readTimeout = 30000
+            connection.connectTimeout = 15000 // Aumentado
+            connection.readTimeout = 30000 // Aumentado
             connection.connect()
 
             val contentLength = connection.contentLength.toLong()
@@ -111,6 +112,17 @@ class DownloadWorker(
             var totalBytesRead = 0L
 
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                // *** Verificar si el Worker ha sido detenido ***
+                if (isStopped) {
+                    Log.d("DownloadWorker", "Worker detenido, cancelando descarga")
+                    inputStream.close()
+                    outputStream.close()
+                    connection.disconnect()
+                    // Eliminar archivo parcial
+                    if (apkFile.exists()) apkFile.delete()
+                    return Result.failure()
+                }
+
                 outputStream.write(buffer, 0, bytesRead)
                 totalBytesRead += bytesRead
                 if (builder != null && contentLength > 0) {

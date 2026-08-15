@@ -69,7 +69,6 @@ class MainActivity : ComponentActivity() {
                     // Ya tiene permiso
                 }
                 else -> {
-                    // Solicitar permiso
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
             }
@@ -110,22 +109,28 @@ class MainActivity : ComponentActivity() {
             var showUpdateErrorDialog by remember { mutableStateOf(false) }
             var showNetworkErrorDialog by remember { mutableStateOf(false) }
 
-            // Verificar actualizaciones al inicio
+            // Flag para evitar ejecutar la verificación automática más de una vez
+            var autoCheckDone by remember { mutableStateOf(false) }
+
+            // Verificar actualizaciones al inicio (solo una vez)
             LaunchedEffect(Unit) {
-                val result = updateManager.checkForUpdate()
-                when (result) {
-                    is UpdateManager.UpdateResult.Success -> {
-                        updateInfo = result.info
-                        showUpdateDialog = true
-                    }
-                    UpdateManager.UpdateResult.NoUpdate -> {
-                        showNoUpdateDialog = true
-                    }
-                    UpdateManager.UpdateResult.NetworkError -> {
-                        showNetworkErrorDialog = true
-                    }
-                    is UpdateManager.UpdateResult.Error -> {
-                        showUpdateErrorDialog = true
+                if (!autoCheckDone) {
+                    autoCheckDone = true
+                    val result = updateManager.checkForUpdate()
+                    when (result) {
+                        is UpdateManager.UpdateResult.Success -> {
+                            updateInfo = result.info
+                            showUpdateDialog = true
+                        }
+                        UpdateManager.UpdateResult.NoUpdate -> {
+                            showNoUpdateDialog = true
+                        }
+                        UpdateManager.UpdateResult.NetworkError -> {
+                            showNetworkErrorDialog = true
+                        }
+                        is UpdateManager.UpdateResult.Error -> {
+                            showUpdateErrorDialog = true
+                        }
                     }
                 }
             }
@@ -320,17 +325,14 @@ class MainActivity : ComponentActivity() {
             val permisoConcedido = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 packageManager.canRequestPackageInstalls()
             } else {
-                true // En versiones anteriores siempre se puede instalar
+                true
             }
 
             if (permisoConcedido) {
-                // Verificar si el APK ya existe en caché
                 val apkFile = File(filesDir, "updates/sumador_v${pending.version}.apk")
                 if (apkFile.exists()) {
                     Log.d("MainActivity", "APK encontrado en caché, iniciando instalación automática")
-                    // Lanzar nuevamente el Worker para que instale el APK (no lo descargará de nuevo)
                     updateManager.startBackgroundDownload(pending.downloadUrl, pending.version)
-                    // Limpiar la actualización pendiente para no repetir
                     (application as SumadorApplication).pendingUpdate = null
                 } else {
                     Log.d("MainActivity", "APK no encontrado en caché, no se puede instalar automáticamente")
