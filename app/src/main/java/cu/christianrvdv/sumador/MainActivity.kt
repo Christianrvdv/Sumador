@@ -30,7 +30,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import cu.christianrvdv.sumador.ui.history.SavedSumsScreen
+import cu.christianrvdv.sumador.ui.manage_denominations.ManageDenominationsScreen
 import cu.christianrvdv.sumador.ui.settings.LanguageOption
 import cu.christianrvdv.sumador.ui.settings.SettingsViewModel
 import cu.christianrvdv.sumador.ui.settings.ThemeOption
@@ -302,11 +304,24 @@ class MainActivity : ComponentActivity() {
                                     lifecycleScope.launch {
                                         checkForUpdatesManually()
                                     }
+                                },
+                                onNavigateToManageDenominations = {
+                                    val currency = settingsState.currencySymbol.name
+                                    navController.navigate("manage_denominations/$currency")
                                 }
                             )
                         }
                         composable("history") {
                             SavedSumsScreen(
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                        // ⬇️ NUEVA RUTA ⬇️
+                        composable(
+                            route = "manage_denominations/{currency}",
+                            arguments = listOf(navArgument("currency") { defaultValue = "PESO" })
+                        ) {
+                            ManageDenominationsScreen(
                                 onBack = { navController.popBackStack() }
                             )
                         }

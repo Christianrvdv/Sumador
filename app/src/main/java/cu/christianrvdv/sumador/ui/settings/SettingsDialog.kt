@@ -31,7 +31,8 @@ fun SettingsBottomSheet(
     onKeepScreenOnChange: (Boolean) -> Unit,
     onUseCoinsChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit,
-    onCheckForUpdates: () -> Unit
+    onCheckForUpdates: () -> Unit,
+    onManageDenominations: () -> Unit // Nuevo callback
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -54,6 +55,7 @@ fun SettingsBottomSheet(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
+            // Tema
             SettingsSection(
                 icon = Icons.Default.BrightnessMedium,
                 title = stringResource(R.string.theme_label)
@@ -76,6 +78,7 @@ fun SettingsBottomSheet(
                 }
             }
 
+            // Moneda
             SettingsSection(
                 icon = Icons.Default.AttachMoney,
                 title = stringResource(R.string.currency_label)
@@ -98,28 +101,19 @@ fun SettingsBottomSheet(
                 }
             }
 
+            // Denominaciones (nueva sección)
             SettingsSection(
-                icon = Icons.Default.Language,
-                title = stringResource(R.string.language_label)
+                icon = Icons.Default.Money,
+                title = stringResource(R.string.denominations_section_title)
             ) {
-                LanguageOption.values().forEach { option ->
-                    SettingsRadioItem(
-                        selected = settingsState.language == option,
-                        label = when (option) {
-                            LanguageOption.ENGLISH -> stringResource(R.string.language_english)
-                            LanguageOption.SPANISH -> stringResource(R.string.language_spanish)
-                            LanguageOption.SYSTEM -> stringResource(R.string.language_system)
-                        },
-                        icon = when (option) {
-                            LanguageOption.ENGLISH -> Icons.Default.Translate
-                            LanguageOption.SPANISH -> Icons.Default.Translate
-                            LanguageOption.SYSTEM -> Icons.Default.DeviceUnknown
-                        },
-                        onClick = { onLanguageChange(option) }
-                    )
-                }
+                SettingsButtonItem(
+                    label = stringResource(R.string.manage_denominations_button),
+                    icon = Icons.Default.Edit,
+                    onClick = onManageDenominations
+                )
             }
 
+            // Orden
             SettingsSection(
                 icon = Icons.Default.Sort,
                 title = stringResource(R.string.sort_label)
@@ -138,6 +132,7 @@ fun SettingsBottomSheet(
                 )
             }
 
+            // Opciones
             SettingsSection(
                 icon = Icons.Default.ToggleOn,
                 title = stringResource(R.string.settings_options_section)
@@ -168,7 +163,7 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // Sección de Actualizaciones (ahora traducible)
+            // Actualizaciones
             SettingsSection(
                 icon = Icons.Default.SystemUpdate,
                 title = stringResource(R.string.updates_section_title)
@@ -180,6 +175,7 @@ fun SettingsBottomSheet(
                 )
             }
 
+            // About
             TextButton(
                 onClick = onAboutClick,
                 modifier = Modifier.fillMaxWidth(),
@@ -193,6 +189,7 @@ fun SettingsBottomSheet(
                 Text(stringResource(R.string.settings_about_button))
             }
 
+            // Done
             Button(
                 onClick = onDismiss,
                 modifier = Modifier
