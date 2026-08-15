@@ -1,9 +1,8 @@
-// di/DatabaseModule.kt
 package cu.christianrvdv.sumador.di
 
 import android.content.Context
-import androidx.room.Room
 import cu.christianrvdv.sumador.data.database.AppDatabase
+import cu.christianrvdv.sumador.data.database.CustomDenominationDao
 import cu.christianrvdv.sumador.data.database.SavedSumDao
 import dagger.Module
 import dagger.Provides
@@ -26,5 +25,11 @@ object DatabaseModule {
     @Singleton
     fun provideSavedSumDao(db: AppDatabase): SavedSumDao {
         return db.savedSumDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideCustomDenominationDao(db: AppDatabase): CustomDenominationDao {
+        return db.customDenominationDao()
     }
 }

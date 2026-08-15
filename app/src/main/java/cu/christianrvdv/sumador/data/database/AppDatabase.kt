@@ -1,20 +1,20 @@
-// data/database/AppDatabase.kt
 package cu.christianrvdv.sumador.data.database
 
+import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import android.content.Context
 
 @Database(
-    entities = [SavedSumEntity::class],
-    version = 1,
+    entities = [SavedSumEntity::class, CustomDenominationEntity::class],
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun savedSumDao(): SavedSumDao
+    abstract fun customDenominationDao(): CustomDenominationDao // Nuevo DAO
 
     companion object {
         @Volatile
