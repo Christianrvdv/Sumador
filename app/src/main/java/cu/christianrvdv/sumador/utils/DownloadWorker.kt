@@ -24,10 +24,14 @@ class DownloadWorker(
     companion object {
         private const val WORK_TAG = "download_update"
         private const val KEY_DOWNLOAD_URL = "download_url"
+        private const val KEY_VERSION = "version"          // NUEVO: recibe la versión
         private const val NOTIFICATION_ID = 1001
 
-        fun start(context: Context, downloadUrl: String) {
-            val data = Data.Builder().putString(KEY_DOWNLOAD_URL, downloadUrl).build()
+        fun start(context: Context, downloadUrl: String, version: String) {
+            val data = Data.Builder()
+                .putString(KEY_DOWNLOAD_URL, downloadUrl)
+                .putString(KEY_VERSION, version)
+                .build()
             val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
                 .setInputData(data)
                 .setConstraints(
@@ -43,18 +47,32 @@ class DownloadWorker(
 
     override suspend fun doWork(): Result {
         val downloadUrl = inputData.getString(KEY_DOWNLOAD_URL) ?: return Result.failure()
+        val version = inputData.getString(KEY_VERSION) ?: return Result.failure()
+
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val builder = createNotificationBuilder()
 
-        // Mostrar notificación inicial
+        // Directorio persistente para APKs (no se borra al limpiar caché)
+        val updatesDir = File(applicationContext.filesDir, "updates")
+        if (!updatesDir.exists()) updatesDir.mkdirs()
+
+        // Nombre único por versión
+        val apkFile = File(updatesDir, "sumador_v${version}.apk")
+
+        // -------- Si el APK ya existe, saltamos la descarga y vamos directo a instalación --------
+        if (apkFile.exists()) {
+            builder.setContentText("APK ya descargado, instalando...")
+                .setProgress(0, 0, false)
+            notificationManager.notify(NOTIFICATION_ID, builder.build())
+            installApk(apkFile)
+            return Result.success()
+        }
+
+        // -------- Descarga normal --------
         builder.setProgress(100, 0, true)
         notificationManager.notify(NOTIFICATION_ID, builder.build())
 
         return try {
-            val fileName = "sumador_update.apk"
-            val outputFile = File(applicationContext.cacheDir, fileName)
-            outputFile.delete()
-
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
@@ -64,7 +82,7 @@ class DownloadWorker(
 
             val contentLength = connection.contentLength.toLong()
             val inputStream = connection.inputStream
-            val outputStream = FileOutputStream(outputFile)
+            val outputStream = FileOutputStream(apkFile)
 
             val buffer = ByteArray(8192)
             var bytesRead: Int
@@ -85,13 +103,11 @@ class DownloadWorker(
             inputStream.close()
             connection.disconnect()
 
-            if (outputFile.exists()) {
-                // Instalación
+            if (apkFile.exists()) {
                 builder.setContentText("Descarga completada. Instalando...")
                     .setProgress(0, 0, false)
                 notificationManager.notify(NOTIFICATION_ID, builder.build())
-
-                installApk(outputFile)
+                installApk(apkFile)
                 Result.success()
             } else {
                 builder.setContentText("Error: archivo no encontrado")
@@ -117,7 +133,7 @@ class DownloadWorker(
             .setContentTitle("Descargando actualización")
             .setContentText("Preparando...")
             .setSmallIcon(R.mipmap.ic_launcher)
-            .setOngoing(true) // Mantiene la notificación persistente
+            .setOngoing(true)
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
     }

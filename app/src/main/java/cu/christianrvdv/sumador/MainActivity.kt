@@ -117,7 +117,8 @@ class MainActivity : ComponentActivity() {
                             onClick = {
                                 val info = updateInfo!!
                                 showUpdateDialog = false
-                                updateManager.startBackgroundDownload(info.downloadUrl)
+                                // Se pasa la versión para que el Worker pueda guardar el APK con ese nombre
+                                updateManager.startBackgroundDownload(info.downloadUrl, info.version)
                                 showDownloadStartedDialog = true
                             }
                         ) {

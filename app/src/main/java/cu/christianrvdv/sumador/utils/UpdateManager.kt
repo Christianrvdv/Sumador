@@ -57,8 +57,9 @@ class UpdateManager(private val context: Context) {
         return@withContext null
     }
 
-    fun startBackgroundDownload(downloadUrl: String) {
-        DownloadWorker.start(context, downloadUrl)
+    // NUEVO: se pasa también la versión
+    fun startBackgroundDownload(downloadUrl: String, version: String) {
+        DownloadWorker.start(context, downloadUrl, version)
     }
 
     private fun compareVersions(v1: String, v2: String): Int {
