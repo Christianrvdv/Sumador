@@ -1,0 +1,12 @@
+package cu.christianrvdv.sumador.data.database
+
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity(tableName = "custom_denominations")
+data class CustomDenominationEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val currency: String, // "PESO", "USD", "EURO"
+    val denomination: Int  // valor en centavos (ej: 1000 = 10.00)
+)
