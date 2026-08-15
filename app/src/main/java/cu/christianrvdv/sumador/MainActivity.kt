@@ -37,6 +37,7 @@ import cu.christianrvdv.sumador.ui.theme.SumadorTheme
 import cu.christianrvdv.sumador.utils.UpdateManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.Locale
 
 @AndroidEntryPoint
@@ -146,6 +147,8 @@ class MainActivity : ComponentActivity() {
                             onClick = {
                                 val info = updateInfo!!
                                 showUpdateDialog = false
+                                // Guardar la actualización pendiente en Application
+                                (application as SumadorApplication).pendingUpdate = info
                                 // Iniciar descarga (se pasa la versión para cachear el APK)
                                 updateManager.startBackgroundDownload(info.downloadUrl, info.version)
                                 showDownloadStartedDialog = true
@@ -260,6 +263,40 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        // Verificar si hay una actualización pendiente y el permiso de instalación está concedido
+        val pending = (application as SumadorApplication).pendingUpdate
+        if (pending != null) {
+            val permisoConcedido = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                packageManager.canRequestPackageInstalls()
+            } else {
+                true // En versiones anteriores siempre se puede instalar
+            }
+
+            if (permisoConcedido) {
+                // Verificar si el APK ya existe en caché
+                val apkFile = File(filesDir, "updates/sumador_v${pending.version}.apk")
+                if (apkFile.exists()) {
+                    Log.d("MainActivity", "APK encontrado en caché, iniciando instalación automática")
+                    // Lanzar nuevamente el Worker para que instale el APK (no lo descargará de nuevo)
+                    updateManager.startBackgroundDownload(pending.downloadUrl, pending.version)
+                    // Limpiar la actualización pendiente para no repetir
+                    (application as SumadorApplication).pendingUpdate = null
+                } else {
+                    Log.d("MainActivity", "APK no encontrado en caché, no se puede instalar automáticamente")
+                    // Si no existe, quizás deberíamos limpiar la pendiente o reintentar descargar
+                    // (Pero si el usuario canceló la descarga, no debería estar pendiente)
+                }
+            } else {
+                // Permiso no concedido, esperar a que el usuario lo habilite desde la configuración
+                Log.d("MainActivity", "Permiso de instalación no concedido, esperando...")
+                // No limpiamos pendingUpdate para que al regresar de nuevo se intente
             }
         }
     }
