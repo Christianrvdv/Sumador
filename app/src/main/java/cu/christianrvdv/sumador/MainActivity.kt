@@ -1,11 +1,15 @@
 package cu.christianrvdv.sumador
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.content.res.Configuration
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -39,9 +44,33 @@ class MainActivity : ComponentActivity() {
 
     private val updateManager by lazy { UpdateManager(this) }
 
+    // Lanzador para solicitar permiso de notificaciones (Android 13+)
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Log.d("MainActivity", "Permiso de notificaciones concedido")
+        } else {
+            Log.d("MainActivity", "Permiso de notificaciones denegado")
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        // Solicitar permiso de notificaciones en Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            when (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)) {
+                PackageManager.PERMISSION_GRANTED -> {
+                    // Ya tiene permiso
+                }
+                else -> {
+                    // Solicitar permiso
+                    requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
+        }
 
         setContent {
             val context = LocalContext.current
@@ -117,7 +146,7 @@ class MainActivity : ComponentActivity() {
                             onClick = {
                                 val info = updateInfo!!
                                 showUpdateDialog = false
-                                // Se pasa la versión para que el Worker pueda guardar el APK con ese nombre
+                                // Iniciar descarga (se pasa la versión para cachear el APK)
                                 updateManager.startBackgroundDownload(info.downloadUrl, info.version)
                                 showDownloadStartedDialog = true
                             }
@@ -197,9 +226,6 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            // 6. (Opcional) Diálogo de progreso de descarga en primer plano (ya no se usa porque ahora es en segundo plano con notificación)
-            // Lo eliminamos.
-
             key(settingsState.language) {
                 SumadorTheme(
                     darkTheme = useDarkTheme,
@@ -211,7 +237,6 @@ class MainActivity : ComponentActivity() {
                                 settingsViewModel = settingsViewModel,
                                 onNavigateToHistory = { navController.navigate("history") },
                                 onCheckForUpdates = {
-                                    // Lanzar la verificación manual
                                     lifecycleScope.launch {
                                         checkForUpdatesManually()
                                     }

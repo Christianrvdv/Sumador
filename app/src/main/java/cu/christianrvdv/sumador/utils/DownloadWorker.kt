@@ -1,12 +1,15 @@
 package cu.christianrvdv.sumador.utils
 
+import android.Manifest
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.work.*
 import cu.christianrvdv.sumador.MainActivity
@@ -24,7 +27,7 @@ class DownloadWorker(
     companion object {
         private const val WORK_TAG = "download_update"
         private const val KEY_DOWNLOAD_URL = "download_url"
-        private const val KEY_VERSION = "version"          // NUEVO: recibe la versión
+        private const val KEY_VERSION = "version"
         private const val NOTIFICATION_ID = 1001
 
         fun start(context: Context, downloadUrl: String, version: String) {
@@ -50,27 +53,46 @@ class DownloadWorker(
         val version = inputData.getString(KEY_VERSION) ?: return Result.failure()
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val builder = createNotificationBuilder()
 
-        // Directorio persistente para APKs (no se borra al limpiar caché)
+        // Verificar si tenemos permiso para mostrar notificaciones (Android 13+)
+        val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                applicationContext,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true // En versiones anteriores no se necesita permiso
+        }
+
+        // Solo creamos notificación si tenemos permiso
+        val builder = if (hasNotificationPermission) {
+            createNotificationBuilder()
+        } else {
+            null
+        }
+
+        // Directorio persistente para APKs
         val updatesDir = File(applicationContext.filesDir, "updates")
         if (!updatesDir.exists()) updatesDir.mkdirs()
 
-        // Nombre único por versión
         val apkFile = File(updatesDir, "sumador_v${version}.apk")
 
-        // -------- Si el APK ya existe, saltamos la descarga y vamos directo a instalación --------
+        // Si el APK ya existe, saltamos la descarga
         if (apkFile.exists()) {
-            builder.setContentText("APK ya descargado, instalando...")
-                .setProgress(0, 0, false)
-            notificationManager.notify(NOTIFICATION_ID, builder.build())
+            if (builder != null) {
+                builder.setContentText("APK ya descargado, instalando...")
+                    .setProgress(0, 0, false)
+                notificationManager.notify(NOTIFICATION_ID, builder.build())
+            }
             installApk(apkFile)
             return Result.success()
         }
 
-        // -------- Descarga normal --------
-        builder.setProgress(100, 0, true)
-        notificationManager.notify(NOTIFICATION_ID, builder.build())
+        // Iniciamos la notificación de progreso (si hay permiso)
+        if (builder != null) {
+            builder.setProgress(100, 0, true)
+            notificationManager.notify(NOTIFICATION_ID, builder.build())
+        }
 
         return try {
             val url = URL(downloadUrl)
@@ -91,7 +113,7 @@ class DownloadWorker(
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                 outputStream.write(buffer, 0, bytesRead)
                 totalBytesRead += bytesRead
-                if (contentLength > 0) {
+                if (builder != null && contentLength > 0) {
                     val progress = (totalBytesRead.toFloat() / contentLength.toFloat() * 100).toInt()
                     builder.setProgress(100, progress, false)
                     builder.setContentText("Descargando $progress%")
@@ -104,21 +126,27 @@ class DownloadWorker(
             connection.disconnect()
 
             if (apkFile.exists()) {
-                builder.setContentText("Descarga completada. Instalando...")
-                    .setProgress(0, 0, false)
-                notificationManager.notify(NOTIFICATION_ID, builder.build())
+                if (builder != null) {
+                    builder.setContentText("Descarga completada. Instalando...")
+                        .setProgress(0, 0, false)
+                    notificationManager.notify(NOTIFICATION_ID, builder.build())
+                }
                 installApk(apkFile)
                 Result.success()
             } else {
-                builder.setContentText("Error: archivo no encontrado")
-                    .setProgress(0, 0, false)
-                notificationManager.notify(NOTIFICATION_ID, builder.build())
+                if (builder != null) {
+                    builder.setContentText("Error: archivo no encontrado")
+                        .setProgress(0, 0, false)
+                    notificationManager.notify(NOTIFICATION_ID, builder.build())
+                }
                 Result.failure()
             }
         } catch (e: Exception) {
-            builder.setContentText("Error: ${e.message}")
-                .setProgress(0, 0, false)
-            notificationManager.notify(NOTIFICATION_ID, builder.build())
+            if (builder != null) {
+                builder.setContentText("Error: ${e.message}")
+                    .setProgress(0, 0, false)
+                notificationManager.notify(NOTIFICATION_ID, builder.build())
+            }
             Result.failure()
         }
     }
