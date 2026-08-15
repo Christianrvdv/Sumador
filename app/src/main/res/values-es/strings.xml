@@ -182,4 +182,10 @@
     <string name="denomination_value_label">Valor de la denominación</string>
     <string name="no_denominations_message">Sin denominaciones personalizadas</string>
     <string name="add_denomination_hint">Toca + para agregar una nueva</string>
+
+    <string name="reset_denominations_confirmation_title">¿Restablecer denominaciones predeterminadas?</string>
+    <string name="reset_denominations_confirmation_message">Esto eliminará todas las denominaciones personalizadas para la moneda actual y restaurará las predeterminadas. ¿Estás seguro?</string>
+    <string name="reset_confirm">Sí, restablecer</string>
+    <string name="edit_denomination_info_title">Editando denominaciones</string>
+    <string name="edit_denomination_info_message">Los cambios solo afectarán a la moneda actualmente seleccionada (%s).</string>
 </resources>

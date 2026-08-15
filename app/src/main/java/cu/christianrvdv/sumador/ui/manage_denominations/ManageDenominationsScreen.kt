@@ -26,14 +26,31 @@ fun ManageDenominationsScreen(
     viewModel: CustomDenominationViewModel = hiltViewModel()
 ) {
     val denominations by viewModel.denominations.collectAsState()
+    val currency by viewModel.currency.collectAsState()
+
     var showAddDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showResetConfirmationDialog by remember { mutableStateOf(false) }
+    var showEditInfoDialog by remember { mutableStateOf(false) }
+
     var editingEntity by remember { mutableStateOf<CustomDenominationEntity?>(null) }
     var deletingEntity by remember { mutableStateOf<CustomDenominationEntity?>(null) }
 
     var inputText by remember { mutableStateOf("") }
     var isCoin by remember { mutableStateOf(false) }
+
+    // Función para abrir el diálogo de edición con información previa
+    fun startEdit(entity: CustomDenominationEntity) {
+        editingEntity = entity
+        inputText = if (entity.isCoin) {
+            entity.denomination.toString()
+        } else {
+            (entity.denomination / 100).toString()
+        }
+        isCoin = entity.isCoin
+        showEditInfoDialog = true
+    }
 
     Scaffold(
         topBar = {
@@ -45,7 +62,7 @@ fun ManageDenominationsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.resetToDefaults() }) {
+                    IconButton(onClick = { showResetConfirmationDialog = true }) {
                         Icon(Icons.Default.Restore, contentDescription = stringResource(R.string.reset_to_defaults))
                     }
                 },
@@ -81,17 +98,7 @@ fun ManageDenominationsScreen(
             items(denominations) { entity ->
                 DenominationItem(
                     entity = entity,
-                    onEdit = {
-                        editingEntity = entity
-                        // Mostrar el valor nominal en el campo de texto (no en centavos)
-                        inputText = if (entity.isCoin) {
-                            entity.denomination.toString()
-                        } else {
-                            (entity.denomination / 100).toString()
-                        }
-                        isCoin = entity.isCoin
-                        showEditDialog = true
-                    },
+                    onEdit = { startEdit(entity) },
                     onDelete = {
                         deletingEntity = entity
                         showDeleteDialog = true
@@ -160,7 +167,70 @@ fun ManageDenominationsScreen(
             )
         }
 
-        // Diálogo Editar
+        // Diálogo de confirmación de restablecimiento
+        if (showResetConfirmationDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetConfirmationDialog = false },
+                title = { Text(stringResource(R.string.reset_denominations_confirmation_title)) },
+                text = { Text(stringResource(R.string.reset_denominations_confirmation_message)) },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.resetToDefaults()
+                            showResetConfirmationDialog = false
+                        }
+                    ) {
+                        Text(stringResource(R.string.reset_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showResetConfirmationDialog = false }) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+
+        // Diálogo informativo antes de editar
+        if (showEditInfoDialog && editingEntity != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showEditInfoDialog = false
+                    editingEntity = null
+                },
+                title = { Text(stringResource(R.string.edit_denomination_info_title)) },
+                text = {
+                    Text(
+                        stringResource(
+                            R.string.edit_denomination_info_message,
+                            currency // El nombre de la moneda (PESO, USD, EURO)
+                        )
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            showEditInfoDialog = false
+                            showEditDialog = true
+                        }
+                    ) {
+                        Text(stringResource(R.string.ok))
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showEditInfoDialog = false
+                            editingEntity = null
+                        }
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
+                }
+            )
+        }
+
+        // Diálogo Editar (se abre después de aceptar el informativo)
         if (showEditDialog && editingEntity != null) {
             DenominationDialog(
                 title = stringResource(R.string.edit_denomination),

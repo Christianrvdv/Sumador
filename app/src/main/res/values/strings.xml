@@ -182,4 +182,10 @@
     <string name="denomination_value_label">Denomination value</string>
     <string name="no_denominations_message">No custom denominations</string>
     <string name="add_denomination_hint">Tap + to add a new denomination</string>
+
+    <string name="reset_denominations_confirmation_title">Reset to default denominations?</string>
+    <string name="reset_denominations_confirmation_message">This will delete all custom denominations for the current currency and restore the default ones. Are you sure?</string>
+    <string name="reset_confirm">Yes, reset</string>
+    <string name="edit_denomination_info_title">Editing denominations</string>
+    <string name="edit_denomination_info_message">Changes will only apply to the currently selected currency (%s).</string>
 </resources>

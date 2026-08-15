@@ -18,7 +18,7 @@ class CustomDenominationViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val currency: StateFlow<String> = savedStateHandle.getStateFlow("currency", "PESO")
+    val currency: StateFlow<String> = savedStateHandle.getStateFlow("currency", "PESO")
 
     val denominations: StateFlow<List<CustomDenominationEntity>> =
         dao.getByCurrency(currency.value)
