@@ -9,17 +9,35 @@ import androidx.core.content.FileProvider
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
+sealed class DownloadState {
+    object Idle : DownloadState()
+    data class Downloading(val progress: Float) : DownloadState()
+    object Completed : DownloadState()
+    data class Error(val message: String) : DownloadState()
+}
+
 class UpdateManager(private val context: Context) {
 
     companion object {
         private const val TAG = "UpdateManager"
         private const val GITHUB_API_URL = "https://api.github.com/repos/christianrvdv/Sumador/releases/latest"
+    }
+
+    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
+    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
+
+    fun resetState() {
+        _downloadState.value = DownloadState.Idle
     }
 
     /**
@@ -44,11 +62,10 @@ class UpdateManager(private val context: Context) {
             connection.disconnect()
 
             val release = Gson().fromJson(response, Release::class.java)
-            val latestVersion = release.tagName.removePrefix("v") // "v1.4.0" -> "1.4.0"
+            val latestVersion = release.tagName.removePrefix("v")
             val currentVersion = context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "0.0.0"
 
             if (compareVersions(latestVersion, currentVersion) > 0) {
-                // Buscar el asset APK
                 val apkAsset = release.assets.firstOrNull { it.name.endsWith(".apk") }
                 if (apkAsset != null) {
                     Log.d(TAG, "Nueva versión $latestVersion, URL descarga: ${apkAsset.browserDownloadUrl}")
@@ -70,9 +87,13 @@ class UpdateManager(private val context: Context) {
 
     /**
      * Descarga el APK y lanza el instalador.
+     * Emite progreso a través de downloadState.
+     * @return true si la descarga e instalación fueron exitosas, false en caso de error.
      */
     suspend fun downloadAndInstall(downloadUrl: String): Boolean = withContext(Dispatchers.IO) {
         try {
+            _downloadState.update { DownloadState.Downloading(0f) }
+
             val fileName = "sumador_update.apk"
             val outputFile = File(context.cacheDir, fileName)
             if (outputFile.exists()) outputFile.delete()
@@ -82,29 +103,43 @@ class UpdateManager(private val context: Context) {
             connection.requestMethod = "GET"
             connection.connectTimeout = 10000
             connection.readTimeout = 30000
+            connection.connect()
 
+            val contentLength = connection.contentLength.toLong()
             val inputStream = connection.inputStream
             val outputStream = FileOutputStream(outputFile)
 
-            val buffer = ByteArray(4096)
+            val buffer = ByteArray(8192)
             var bytesRead: Int
+            var totalBytesRead = 0L
+
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
                 outputStream.write(buffer, 0, bytesRead)
+                totalBytesRead += bytesRead
+                if (contentLength > 0) {
+                    val progress = totalBytesRead.toFloat() / contentLength.toFloat()
+                    _downloadState.update { DownloadState.Downloading(progress.coerceIn(0f, 1f)) }
+                }
             }
+
             outputStream.close()
             inputStream.close()
             connection.disconnect()
 
-            // Lanzar el instalador
             if (outputFile.exists()) {
+                _downloadState.update { DownloadState.Completed }
                 installApk(outputFile)
+                // Resetear estado después de un breve retraso para que el diálogo de progreso desaparezca
+                // pero no es necesario, ya que Completed no muestra diálogo.
+                resetState()
                 return@withContext true
             } else {
-                Log.e(TAG, "El archivo descargado no existe")
+                _downloadState.update { DownloadState.Error("El archivo descargado no existe") }
                 return@withContext false
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error al descargar o instalar", e)
+            _downloadState.update { DownloadState.Error(e.message ?: "Error desconocido") }
             return@withContext false
         }
     }

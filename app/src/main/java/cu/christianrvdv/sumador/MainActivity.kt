@@ -1,15 +1,20 @@
 package cu.christianrvdv.sumador
 
-import android.app.AlertDialog
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -21,24 +26,20 @@ import cu.christianrvdv.sumador.ui.settings.SettingsViewModel
 import cu.christianrvdv.sumador.ui.settings.ThemeOption
 import cu.christianrvdv.sumador.ui.sumador.SumadorScreen
 import cu.christianrvdv.sumador.ui.theme.SumadorTheme
+import cu.christianrvdv.sumador.utils.DownloadState
 import cu.christianrvdv.sumador.utils.UpdateManager
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.Locale
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
+    private val updateManager by lazy { UpdateManager(this) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        // Verificar actualizaciones al inicio (no bloquea la UI)
-        lifecycleScope.launch {
-            checkForUpdate()
-        }
 
         setContent {
             val context = LocalContext.current
@@ -66,6 +67,101 @@ class MainActivity : ComponentActivity() {
 
             val navController = rememberNavController()
 
+            // Estado para la actualización
+            var updateInfo by remember { mutableStateOf<UpdateManager.UpdateInfo?>(null) }
+            val downloadState by updateManager.downloadState.collectAsState()
+
+            // Verificar actualizaciones al inicio
+            LaunchedEffect(Unit) {
+                val info = updateManager.checkForUpdate()
+                if (info != null) {
+                    updateInfo = info
+                }
+            }
+
+            // Diálogo de confirmación de actualización
+            if (updateInfo != null) {
+                AlertDialog(
+                    onDismissRequest = { updateInfo = null },
+                    title = { Text("Actualización disponible") },
+                    text = { Text("Hay una nueva versión (${updateInfo!!.version}) disponible. ¿Deseas descargarla e instalarla?") },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                val info = updateInfo!!
+                                updateInfo = null
+                                lifecycleScope.launch {
+                                    updateManager.downloadAndInstall(info.downloadUrl)
+                                }
+                            }
+                        ) {
+                            Text("Actualizar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { updateInfo = null }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
+            }
+
+            // Diálogo de progreso de descarga
+            when (downloadState) {
+                is DownloadState.Downloading -> {
+                    Dialog(onDismissRequest = { /* No permitir cerrar */ }) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            shape = MaterialTheme.shapes.medium
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(24.dp)
+                                    .fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "Descargando actualización...",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                LinearProgressIndicator(
+                                    progress = (downloadState as DownloadState.Downloading).progress,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(8.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "${((downloadState as DownloadState.Downloading).progress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                    }
+                }
+                is DownloadState.Error -> {
+                    // Mostrar diálogo de error y resetear estado
+                    AlertDialog(
+                        onDismissRequest = {
+                            updateManager.resetState()
+                        },
+                        title = { Text("Error") },
+                        text = { Text((downloadState as DownloadState.Error).message) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                updateManager.resetState()
+                            }) {
+                                Text("OK")
+                            }
+                        }
+                    )
+                }
+                else -> { /* Idle o Completed: no mostrar diálogo */ }
+            }
+
             key(settingsState.language) {
                 SumadorTheme(
                     darkTheme = useDarkTheme,
@@ -85,34 +181,6 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    private suspend fun checkForUpdate() {
-        val updateManager = UpdateManager(this)
-        val updateInfo = updateManager.checkForUpdate()
-        if (updateInfo != null) {
-            // Mostrar diálogo en el hilo principal
-            withContext(Dispatchers.Main) {
-                AlertDialog.Builder(this@MainActivity)
-                    .setTitle("Actualización disponible")
-                    .setMessage("Hay una nueva versión (${updateInfo.version}) disponible. ¿Deseas descargarla e instalarla?")
-                    .setPositiveButton("Actualizar") { _, _ ->
-                        lifecycleScope.launch {
-                            val success = updateManager.downloadAndInstall(updateInfo.downloadUrl)
-                            if (!success) {
-                                // Mostrar error
-                                AlertDialog.Builder(this@MainActivity)
-                                    .setTitle("Error")
-                                    .setMessage("No se pudo descargar la actualización. Inténtalo más tarde.")
-                                    .setPositiveButton("OK", null)
-                                    .show()
-                            }
-                        }
-                    }
-                    .setNegativeButton("Cancelar", null)
-                    .show()
             }
         }
     }
