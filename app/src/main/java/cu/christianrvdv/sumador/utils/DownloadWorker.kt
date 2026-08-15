@@ -1,6 +1,5 @@
 package cu.christianrvdv.sumador.utils
 
-import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
@@ -117,8 +116,8 @@ class DownloadWorker(
         return NotificationCompat.Builder(applicationContext, "update_channel")
             .setContentTitle("Descargando actualización")
             .setContentText("Preparando...")
-            .setSmallIcon(R.drawable.ic_notification) // Asegúrate de tener este icono en drawable
-            .setOngoing(true)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setOngoing(true) // Mantiene la notificación persistente
             .setContentIntent(pendingIntent)
             .setOnlyAlertOnce(true)
     }
