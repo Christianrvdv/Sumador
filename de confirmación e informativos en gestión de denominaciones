@@ -1,0 +1,76 @@
+[33mcommit f0d4d64b0ef42e76af182486bdc5e9bedeceb72f[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m)[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 15:26:41 2026 -0400
+
+    feat: agregar diálogos de confirmación al restablecer y editar denominaciones
+    
+    - Diálogo de confirmación al restablecer denominaciones predeterminadas.
+    - Diálogo informativo al editar una denominación, indicando que los cambios solo afectan a la moneda actual.
+    - Nuevos strings traducidos para ambos diálogos.
+
+[33mcommit 7e0ac0c70c2929fdf06e5ae7c6fada489b3a00ea[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 15:23:01 2026 -0400
+
+    Fix: manejo correcto de denominaciones con monedas y billetes
+    
+    - Agregado campo isCoin a CustomDenominationEntity para distinguir monedas de billetes.
+    - Migración de base de datos a versión 3 con columna isCoin.
+    - Convertir valores nominales a centavos al guardar billetes (multiplicar por 100).
+    - Mostrar valores nominales en diálogos de edición (dividir entre 100 para billetes).
+    - Actualizar formatDenomination para usar isCoin y mostrar símbolo ¢ para monedas.
+    - Corregir llamadas a formatDenomination en SavedSumsScreen con isCoin.
+    - SumadorViewModel ahora expone lista de CustomDenominationEntity con tipo.
+    - SumadorScreen y BillInputRow usan el tipo para formatear correctamente.
+
+[33mcommit 0eaa4b09075762ccdb7efa71a312543fdb38ee42[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 14:40:36 2026 -0400
+
+    feat(ui): add ManageDenominationsScreen and CustomDenominationViewModel
+
+[33mcommit 9ebee98de5a7747026de6695e3829f9cd00683d6[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 14:39:50 2026 -0400
+
+    feat(strings): add strings for denomination management
+
+[33mcommit 503391e547fa7a7e7b5a0df3b58713cd206eab98[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 14:39:46 2026 -0400
+
+    feat(sumador): use dynamic denominations from database, fallback to defaults
+
+[33mcommit ca1fd3f441d9b15f3646ebff71f9cb33fda114d1[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 14:39:41 2026 -0400
+
+    feat(settings): add button to manage denominations and navigation to new screen
+
+[33mcommit 636c1b5777638eae6f8731ffd879938165e30855[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 14:38:53 2026 -0400
+
+    feat(database): register CustomDenominationEntity and provide CustomDenominationDao
+
+[33mcommit ad0ed803ba5d2b21142339cc03cc9473b7de5b35[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 14:38:47 2026 -0400
+
+    feat(database): add CustomDenominationEntity and DAO for custom denominations per currency
+
+[33mcommit 768d7ba20a5e2acaca45e66d4313847054d1a4fc[m
+Author: Christian Raúl Vazquez del Valle <christianrvdv.1999@gmail.com>
+Date:   Sat Aug 15 13:52:32 2026 -0400
+
+    fix: Mejora robustez de verificación y descarga de actualizaciones
+    
+    - Reemplaza HttpURLConnection por OkHttp en UpdateManager con timeouts de 15s
+    - Maneja CancellationException para cancelar peticiones al destruir actividad
+    - Añade verificación isStopped en DownloadWorker para interrumpir descarga
+    - Agrega flag autoCheckDone en MainActivity para evitar verificaciones repetidas
+    - Aumenta timeouts de conexión en DownloadWorker a 15s
+    - Añade dependencia OkHttp en build.gradle
+    
+    Estos cambios solucionan el SocketTimeoutException y Socket closed al verificar
+    actualizaciones, mejorando la estabilidad durante cambios de configuración.

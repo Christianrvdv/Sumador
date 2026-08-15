@@ -186,6 +186,6 @@
     <string name="reset_denominations_confirmation_title">¿Restablecer denominaciones predeterminadas?</string>
     <string name="reset_denominations_confirmation_message">Esto eliminará todas las denominaciones personalizadas para la moneda actual y restaurará las predeterminadas. ¿Estás seguro?</string>
     <string name="reset_confirm">Sí, restablecer</string>
-    <string name="edit_denomination_info_title">Editando denominaciones</string>
-    <string name="edit_denomination_info_message">Los cambios solo afectarán a la moneda actualmente seleccionada (%s).</string>
+    <string name="currency_info_title">Moneda actual</string>
+    <string name="currency_info_message">Los cambios realizados aquí solo afectarán a la moneda actualmente seleccionada (%s).</string>
 </resources>
