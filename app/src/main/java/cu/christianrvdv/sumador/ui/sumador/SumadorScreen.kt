@@ -41,10 +41,12 @@ fun SumadorScreen(
     viewModel: SumadorViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel,
     onNavigateToHistory: () -> Unit,
-    onCheckForUpdates: () -> Unit // NUEVO: callback para buscar actualizaciones manualmente
+    onCheckForUpdates: () -> Unit,
+    onNavigateToManageDenominations: () -> Unit // Nuevo callback
 ) {
     val state by viewModel.state.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
+    val denominations by viewModel.denominations.collectAsState() // Lista de denominaciones (personalizadas o default)
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     var showSettingsDialog by remember { mutableStateOf(false) }
@@ -65,14 +67,10 @@ fun SumadorScreen(
         viewModel.setUseCoins(settingsState.useCoins)
     }
 
-    val denominacionesActuales = remember(settingsState.currencySymbol, settingsState.useCoins) {
-        getDenominations(settingsState.currencySymbol, settingsState.useCoins)
+    // Ordenar denominaciones según preferencia
+    val denominacionesOrdenadas = remember(denominations, settingsState.sortAscending) {
+        if (settingsState.sortAscending) denominations.sorted() else denominations.sortedDescending()
     }
-
-    val denominacionesOrdenadas =
-        remember(settingsState.sortAscending, denominacionesActuales) {
-            if (settingsState.sortAscending) denominacionesActuales.sorted() else denominacionesActuales.sortedDescending()
-        }
 
     val totalFormateado = remember(state.total) {
         formatCurrency(state.total)
@@ -324,7 +322,7 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogos (modales) dentro del Scaffold
+    // Diálogos...
 
     if (showResetDialog) {
         AlertDialog(
@@ -514,7 +512,8 @@ fun SumadorScreen(
                 showSettingsDialog = false
                 showAboutDialog = true
             },
-            onCheckForUpdates = onCheckForUpdates // Pasamos el callback
+            onCheckForUpdates = onCheckForUpdates,
+            onManageDenominations = onNavigateToManageDenominations // Pasamos el nuevo callback
         )
     }
 
