@@ -1,31 +1,13 @@
 package cu.christianrvdv.sumador.utils
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import android.util.Log
-import androidx.core.content.FileProvider
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
-import java.io.File
-import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-
-sealed class DownloadState {
-    object Idle : DownloadState()
-    data class Downloading(val progress: Float) : DownloadState()
-    object Completed : DownloadState()
-    data class Error(val message: String) : DownloadState()
-}
 
 class UpdateManager(private val context: Context) {
 
@@ -34,41 +16,6 @@ class UpdateManager(private val context: Context) {
         private const val GITHUB_API_URL = "https://api.github.com/repos/christianrvdv/Sumador/releases/latest"
     }
 
-    private val _downloadState = MutableStateFlow<DownloadState>(DownloadState.Idle)
-    val downloadState: StateFlow<DownloadState> = _downloadState.asStateFlow()
-
-    fun resetState() {
-        _downloadState.value = DownloadState.Idle
-    }
-
-    /**
-     * Comprueba si el permiso de instalación de orígenes desconocidos está concedido.
-     * En Android 8+ (API 26+) es necesario.
-     */
-    fun canInstallPackages(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.packageManager.canRequestPackageInstalls()
-        } else {
-            true // En versiones antiguas no se necesita
-        }
-    }
-
-    /**
-     * Abre la pantalla de configuración para permitir la instalación desde orígenes desconocidos.
-     */
-    fun openInstallSettings() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                data = Uri.parse("package:${context.packageName}")
-            }
-            context.startActivity(intent)
-        }
-    }
-
-    /**
-     * Comprueba si hay una nueva versión disponible en GitHub.
-     * @return UpdateInfo si hay actualización, null si no o si hay error.
-     */
     suspend fun checkForUpdate(): UpdateInfo? = withContext(Dispatchers.IO) {
         try {
             val url = URL(GITHUB_API_URL)
@@ -110,89 +57,8 @@ class UpdateManager(private val context: Context) {
         return@withContext null
     }
 
-    /**
-     * Descarga el APK y lanza el instalador.
-     * Emite progreso a través de downloadState.
-     * @return true si la descarga e instalación fueron exitosas, false en caso de error.
-     */
-    suspend fun downloadAndInstall(downloadUrl: String): Boolean = withContext(Dispatchers.IO) {
-        try {
-            // Verificar permiso de instalación
-            if (!canInstallPackages()) {
-                _downloadState.update { DownloadState.Error("Permiso de instalación no concedido. Por favor, habilítalo en ajustes.") }
-                // Abrir ajustes para que el usuario lo habilite
-                openInstallSettings()
-                return@withContext false
-            }
-
-            _downloadState.update { DownloadState.Downloading(0f) }
-
-            val fileName = "sumador_update.apk"
-            val outputFile = File(context.cacheDir, fileName)
-            if (outputFile.exists()) outputFile.delete()
-
-            val url = URL(downloadUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            connection.connectTimeout = 10000
-            connection.readTimeout = 30000
-            connection.connect()
-
-            val contentLength = connection.contentLength.toLong()
-            val inputStream = connection.inputStream
-            val outputStream = FileOutputStream(outputFile)
-
-            val buffer = ByteArray(8192)
-            var bytesRead: Int
-            var totalBytesRead = 0L
-
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
-                totalBytesRead += bytesRead
-                if (contentLength > 0) {
-                    val progress = totalBytesRead.toFloat() / contentLength.toFloat()
-                    _downloadState.update { DownloadState.Downloading(progress.coerceIn(0f, 1f)) }
-                }
-            }
-
-            outputStream.close()
-            inputStream.close()
-            connection.disconnect()
-
-            if (outputFile.exists()) {
-                _downloadState.update { DownloadState.Completed }
-                installApk(outputFile)
-                // Resetear estado después de un breve retraso
-                resetState()
-                return@withContext true
-            } else {
-                _downloadState.update { DownloadState.Error("El archivo descargado no existe") }
-                return@withContext false
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error al descargar o instalar", e)
-            _downloadState.update { DownloadState.Error(e.message ?: "Error desconocido") }
-            return@withContext false
-        }
-    }
-
-    private fun installApk(apkFile: File) {
-        val uri: Uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                apkFile
-            )
-        } else {
-            Uri.fromFile(apkFile)
-        }
-
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "application/vnd.android.package-archive")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-        context.startActivity(intent)
+    fun startBackgroundDownload(downloadUrl: String) {
+        DownloadWorker.start(context, downloadUrl)
     }
 
     private fun compareVersions(v1: String, v2: String): Int {
@@ -207,7 +73,6 @@ class UpdateManager(private val context: Context) {
         return 0
     }
 
-    // Data classes para la respuesta JSON de GitHub
     data class Release(
         @SerializedName("tag_name") val tagName: String,
         val assets: List<Asset>

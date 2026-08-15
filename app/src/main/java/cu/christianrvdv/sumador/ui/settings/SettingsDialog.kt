@@ -30,7 +30,8 @@ fun SettingsBottomSheet(
     onLanguageChange: (LanguageOption) -> Unit,
     onKeepScreenOnChange: (Boolean) -> Unit,
     onUseCoinsChange: (Boolean) -> Unit,
-    onAboutClick: () -> Unit
+    onAboutClick: () -> Unit,
+    onCheckForUpdates: () -> Unit // NUEVO
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -164,6 +165,18 @@ fun SettingsBottomSheet(
                     checked = settingsState.useCoins,
                     onCheckedChange = onUseCoinsChange,
                     description = stringResource(R.string.use_coins_description)
+                )
+            }
+
+            // Nueva sección de Actualizaciones
+            SettingsSection(
+                icon = Icons.Default.SystemUpdate,
+                title = "Actualizaciones"
+            ) {
+                SettingsButtonItem(
+                    label = "Buscar actualizaciones",
+                    icon = Icons.Default.Search,
+                    onClick = onCheckForUpdates
                 )
             }
 
@@ -312,6 +325,40 @@ private fun SettingsSwitchItem(
                 uncheckedThumbColor = MaterialTheme.colorScheme.outline,
                 uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
             )
+        )
+    }
+}
+
+@Composable
+private fun SettingsButtonItem(
+    label: String,
+    icon: ImageVector,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() }
+            .padding(vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        Icon(
+            Icons.Default.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

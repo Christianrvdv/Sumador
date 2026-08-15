@@ -6,10 +6,13 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -26,7 +29,6 @@ import cu.christianrvdv.sumador.ui.settings.SettingsViewModel
 import cu.christianrvdv.sumador.ui.settings.ThemeOption
 import cu.christianrvdv.sumador.ui.sumador.SumadorScreen
 import cu.christianrvdv.sumador.ui.theme.SumadorTheme
-import cu.christianrvdv.sumador.utils.DownloadState
 import cu.christianrvdv.sumador.utils.UpdateManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -67,100 +69,135 @@ class MainActivity : ComponentActivity() {
 
             val navController = rememberNavController()
 
-            // Estado para la actualización
+            // Estados para la actualización
             var updateInfo by remember { mutableStateOf<UpdateManager.UpdateInfo?>(null) }
-            val downloadState by updateManager.downloadState.collectAsState()
+            var showUpdateDialog by remember { mutableStateOf(false) }
+            var showCheckingDialog by remember { mutableStateOf(false) }
+            var showDownloadStartedDialog by remember { mutableStateOf(false) }
+            var showNoUpdateDialog by remember { mutableStateOf(false) }
+            var showUpdateErrorDialog by remember { mutableStateOf(false) }
 
             // Verificar actualizaciones al inicio
             LaunchedEffect(Unit) {
                 val info = updateManager.checkForUpdate()
                 if (info != null) {
                     updateInfo = info
+                    showUpdateDialog = true
                 }
             }
 
-            // Diálogo de confirmación de actualización
-            if (updateInfo != null) {
+            // Función para verificar manualmente (usada desde Settings)
+            suspend fun checkForUpdatesManually() {
+                showCheckingDialog = true
+                try {
+                    val info = updateManager.checkForUpdate()
+                    showCheckingDialog = false
+                    if (info != null) {
+                        updateInfo = info
+                        showUpdateDialog = true
+                    } else {
+                        showNoUpdateDialog = true
+                    }
+                } catch (e: Exception) {
+                    showCheckingDialog = false
+                    showUpdateErrorDialog = true
+                }
+            }
+
+            // === DIÁLOGOS ===
+
+            // 1. Confirmación de actualización
+            if (showUpdateDialog && updateInfo != null) {
                 AlertDialog(
-                    onDismissRequest = { updateInfo = null },
+                    onDismissRequest = { showUpdateDialog = false },
                     title = { Text("Actualización disponible") },
                     text = { Text("Hay una nueva versión (${updateInfo!!.version}) disponible. ¿Deseas descargarla e instalarla?") },
                     confirmButton = {
                         TextButton(
                             onClick = {
                                 val info = updateInfo!!
-                                updateInfo = null
-                                lifecycleScope.launch {
-                                    updateManager.downloadAndInstall(info.downloadUrl)
-                                }
+                                showUpdateDialog = false
+                                updateManager.startBackgroundDownload(info.downloadUrl)
+                                showDownloadStartedDialog = true
                             }
                         ) {
                             Text("Actualizar")
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { updateInfo = null }) {
+                        TextButton(onClick = { showUpdateDialog = false }) {
                             Text("Cancelar")
                         }
                     }
                 )
             }
 
-            // Diálogo de progreso de descarga
-            when (downloadState) {
-                is DownloadState.Downloading -> {
-                    Dialog(onDismissRequest = { /* No permitir cerrar */ }) {
-                        Card(
+            // 2. Descarga iniciada
+            if (showDownloadStartedDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDownloadStartedDialog = false },
+                    title = { Text("Descarga iniciada") },
+                    text = { Text("La actualización se está descargando en segundo plano. Recibirás una notificación cuando termine.") },
+                    confirmButton = {
+                        TextButton(onClick = { showDownloadStartedDialog = false }) {
+                            Text("Aceptar")
+                        }
+                    }
+                )
+            }
+
+            // 3. Buscando actualizaciones (manual)
+            if (showCheckingDialog) {
+                Dialog(onDismissRequest = { }) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp)
+                    ) {
+                        Column (
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            shape = MaterialTheme.shapes.medium
+                                .padding(24.dp)
+                                .fillMaxWidth(),
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(24.dp)
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "Descargando actualización...",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                LinearProgressIndicator(
-                                    progress = (downloadState as DownloadState.Downloading).progress,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(8.dp)
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "${((downloadState as DownloadState.Downloading).progress * 100).toInt()}%",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
+                            Text("Buscando actualizaciones...")
+                            Spacer(modifier = Modifier.height(16.dp))
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                         }
                     }
                 }
-                is DownloadState.Error -> {
-                    // Mostrar diálogo de error y resetear estado
-                    AlertDialog(
-                        onDismissRequest = {
-                            updateManager.resetState()
-                        },
-                        title = { Text("Error") },
-                        text = { Text((downloadState as DownloadState.Error).message) },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                updateManager.resetState()
-                            }) {
-                                Text("OK")
-                            }
-                        }
-                    )
-                }
-                else -> { /* Idle o Completed: no mostrar diálogo */ }
             }
+
+            // 4. No hay actualizaciones
+            if (showNoUpdateDialog) {
+                AlertDialog(
+                    onDismissRequest = { showNoUpdateDialog = false },
+                    title = { Text("Sin actualizaciones") },
+                    text = { Text("Ya tienes la versión más reciente instalada.") },
+                    confirmButton = {
+                        TextButton(onClick = { showNoUpdateDialog = false }) {
+                            Text("Aceptar")
+                        }
+                    }
+                )
+            }
+
+            // 5. Error al buscar actualizaciones
+            if (showUpdateErrorDialog) {
+                AlertDialog(
+                    onDismissRequest = { showUpdateErrorDialog = false },
+                    title = { Text("Error") },
+                    text = { Text("No se pudo comprobar si hay actualizaciones. Verifica tu conexión a Internet.") },
+                    confirmButton = {
+                        TextButton(onClick = { showUpdateErrorDialog = false }) {
+                            Text("Aceptar")
+                        }
+                    }
+                )
+            }
+
+            // 6. (Opcional) Diálogo de progreso de descarga en primer plano (ya no se usa porque ahora es en segundo plano con notificación)
+            // Lo eliminamos.
 
             key(settingsState.language) {
                 SumadorTheme(
@@ -171,7 +208,13 @@ class MainActivity : ComponentActivity() {
                         composable("sumador") {
                             SumadorScreen(
                                 settingsViewModel = settingsViewModel,
-                                onNavigateToHistory = { navController.navigate("history") }
+                                onNavigateToHistory = { navController.navigate("history") },
+                                onCheckForUpdates = {
+                                    // Lanzar la verificación manual
+                                    lifecycleScope.launch {
+                                        checkForUpdatesManually()
+                                    }
+                                }
                             )
                         }
                         composable("history") {

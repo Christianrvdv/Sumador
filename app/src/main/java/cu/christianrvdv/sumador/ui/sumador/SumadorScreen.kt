@@ -40,7 +40,8 @@ fun SumadorScreen(
     modifier: Modifier = Modifier,
     viewModel: SumadorViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel,
-    onNavigateToHistory: () -> Unit
+    onNavigateToHistory: () -> Unit,
+    onCheckForUpdates: () -> Unit // NUEVO: callback para buscar actualizaciones manualmente
 ) {
     val state by viewModel.state.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
@@ -323,6 +324,8 @@ fun SumadorScreen(
         }
     }
 
+    // Diálogos (modales) dentro del Scaffold
+
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -510,7 +513,8 @@ fun SumadorScreen(
             onAboutClick = {
                 showSettingsDialog = false
                 showAboutDialog = true
-            }
+            },
+            onCheckForUpdates = onCheckForUpdates // Pasamos el callback
         )
     }
 
@@ -518,6 +522,8 @@ fun SumadorScreen(
         AboutBottomSheet(onDismiss = { showAboutDialog = false })
     }
 }
+
+// ===================== COMPONENTES UI =====================
 
 @Composable
 fun BillInputRow(
@@ -658,6 +664,8 @@ fun BillInputRow(
         }
     }
 }
+
+// ===================== FUNCIONES AUXILIARES =====================
 
 fun formatCurrency(amount: Long): String {
     val whole = amount / 100
