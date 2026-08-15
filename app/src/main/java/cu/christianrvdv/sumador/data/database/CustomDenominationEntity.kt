@@ -8,5 +8,6 @@ data class CustomDenominationEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val currency: String, // "PESO", "USD", "EURO"
-    val denomination: Int  // valor en centavos (ej: 1000 = 10.00)
+    val denomination: Int, // valor en centavos
+    val isCoin: Boolean = false // true = moneda, false = billete
 )

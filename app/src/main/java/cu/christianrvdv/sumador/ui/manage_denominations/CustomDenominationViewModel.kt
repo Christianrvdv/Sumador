@@ -18,10 +18,8 @@ class CustomDenominationViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // La moneda actual se recibe como argumento de navegación (clave "currency")
     private val currency: StateFlow<String> = savedStateHandle.getStateFlow("currency", "PESO")
 
-    // Flujo de denominaciones personalizadas para esta moneda
     val denominations: StateFlow<List<CustomDenominationEntity>> =
         dao.getByCurrency(currency.value)
             .stateIn(
@@ -31,56 +29,74 @@ class CustomDenominationViewModel @Inject constructor(
             )
 
     /**
-     * Añade una nueva denominación (si no existe ya).
-     * Si ya existe, no hace nada (se puede manejar con un toast o mensaje).
+     * Añade una nueva denominación.
+     * @param value valor nominal en la moneda (ej. 100 para un billete de 100)
+     * @param isCoin true si es moneda, false si es billete
      */
-    fun addDenomination(value: Int) {
+    fun addDenomination(value: Int, isCoin: Boolean) {
         viewModelScope.launch {
-            // Evitar duplicados (opcional)
+            val valueInCents = if (isCoin) value else value * 100
             val current = dao.getByCurrency(currency.value).stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = emptyList()
             ).value
-            if (current.none { it.denomination == value }) {
-                dao.insert(CustomDenominationEntity(currency = currency.value, denomination = value))
+            if (current.none { it.denomination == valueInCents && it.isCoin == isCoin }) {
+                dao.insert(
+                    CustomDenominationEntity(
+                        currency = currency.value,
+                        denomination = valueInCents,
+                        isCoin = isCoin
+                    )
+                )
             }
         }
     }
 
     /**
      * Actualiza una denominación existente.
+     * @param entity entidad a actualizar
+     * @param newValue nuevo valor nominal en la moneda
+     * @param newIsCoin nuevo tipo
      */
-    fun updateDenomination(entity: CustomDenominationEntity, newValue: Int) {
+    fun updateDenomination(entity: CustomDenominationEntity, newValue: Int, newIsCoin: Boolean) {
         viewModelScope.launch {
-            // Validar que no haya duplicado con otro (excepto el mismo)
+            val newValueInCents = if (newIsCoin) newValue else newValue * 100
             val current = dao.getByCurrency(currency.value).stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.Eagerly,
                 initialValue = emptyList()
             ).value
-            if (current.none { it.denomination == newValue && it.id != entity.id }) {
-                dao.insert(entity.copy(denomination = newValue))
+            if (current.none {
+                    it.denomination == newValueInCents && it.isCoin == newIsCoin && it.id != entity.id
+                }) {
+                dao.insert(
+                    entity.copy(
+                        denomination = newValueInCents,
+                        isCoin = newIsCoin
+                    )
+                )
             }
         }
     }
 
-    /**
-     * Elimina una denominación.
-     */
     fun deleteDenomination(entity: CustomDenominationEntity) {
         viewModelScope.launch {
             dao.delete(entity)
         }
     }
 
-    /**
-     * Restablece a las denominaciones predeterminadas eliminando todas las personalizadas
-     * para la moneda actual.
-     */
     fun resetToDefaults() {
         viewModelScope.launch {
             dao.deleteAllForCurrency(currency.value)
         }
+    }
+
+    /**
+     * Convierte un valor en centavos a su representación nominal para mostrar en la UI.
+     * Para billetes: se divide entre 100. Para monedas: se muestra tal cual.
+     */
+    fun getDisplayValue(entity: CustomDenominationEntity): Int {
+        return if (entity.isCoin) entity.denomination else entity.denomination / 100
     }
 }

@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import cu.christianrvdv.sumador.R
+import cu.christianrvdv.sumador.data.database.CustomDenominationEntity
 import cu.christianrvdv.sumador.ui.settings.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -42,18 +43,24 @@ fun SumadorScreen(
     settingsViewModel: SettingsViewModel,
     onNavigateToHistory: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onNavigateToManageDenominations: () -> Unit // Nuevo callback
+    onNavigateToManageDenominations: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
-    val denominations by viewModel.denominations.collectAsState() // Lista de denominaciones (personalizadas o default)
+    val denominations by viewModel.denominations.collectAsState() // List<CustomDenominationEntity>
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
+
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showResetDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showSaveDialog by remember { mutableStateOf(false) }
     var saveName by remember { mutableStateOf("") }
+
+    // Map para saber si una denominación es moneda o billete (usado en el resumen)
+    val isCoinMap = remember(denominations) {
+        denominations.associate { it.denomination to it.isCoin }
+    }
 
     LaunchedEffect(settingsState.autoSave) {
         viewModel.setAutoSave(settingsState.autoSave)
@@ -69,7 +76,11 @@ fun SumadorScreen(
 
     // Ordenar denominaciones según preferencia
     val denominacionesOrdenadas = remember(denominations, settingsState.sortAscending) {
-        if (settingsState.sortAscending) denominations.sorted() else denominations.sortedDescending()
+        if (settingsState.sortAscending) {
+            denominations.sortedBy { it.denomination }
+        } else {
+            denominations.sortedByDescending { it.denomination }
+        }
     }
 
     val totalFormateado = remember(state.total) {
@@ -125,6 +136,7 @@ fun SumadorScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary,
                     actionIconContentColor = MaterialTheme.colorScheme.onPrimary
                 ),
                 modifier = Modifier.clip(RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
@@ -194,7 +206,8 @@ fun SumadorScreen(
                                         shareCurrentSum(
                                             context,
                                             state,
-                                            settingsState.currencySymbol
+                                            settingsState.currencySymbol,
+                                            denominations
                                         )
                                     },
                                     colors = IconButtonDefaults.filledTonalIconButtonColors(
@@ -294,7 +307,7 @@ fun SumadorScreen(
                 }
             }
 
-            denominacionesOrdenadas.forEachIndexed { index, denom ->
+            denominacionesOrdenadas.forEachIndexed { index, entity ->
                 val enterTransition = fadeIn(animationSpec = tween(300, delayMillis = index * 40)) +
                         slideInVertically(
                             animationSpec = tween(
@@ -310,9 +323,10 @@ fun SumadorScreen(
                             slideOutVertically(animationSpec = tween(200)) { it / 3 }
                 ) {
                     BillInputRow(
-                        denomination = denom,
-                        value = state.cantidades[denom] ?: "",
-                        onValueChange = { newValue -> viewModel.updateCantidad(denom, newValue) },
+                        denomination = entity.denomination,
+                        isCoin = entity.isCoin,
+                        value = state.cantidades[entity.denomination] ?: "",
+                        onValueChange = { newValue -> viewModel.updateCantidad(entity.denomination, newValue) },
                         currencySymbol = settingsState.currencySymbol.symbol
                     )
                 }
@@ -322,8 +336,7 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogos...
-
+    // Diálogo de confirmación de reinicio
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -342,6 +355,7 @@ fun SumadorScreen(
         )
     }
 
+    // Diálogo de guardado
     if (showSaveDialog) {
         AlertDialog(
             onDismissRequest = { showSaveDialog = false; saveName = "" },
@@ -398,12 +412,13 @@ fun SumadorScreen(
                             } else {
                                 items.forEach { (denom, cantidadStr) ->
                                     val cantidad = cantidadStr.toIntOrNull() ?: 0
+                                    val isCoin = isCoinMap[denom] ?: (denom % 100 != 0) // fallback a la lógica anterior
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "${formatDenomination(denom)} ${if (denom < 100) "" else settingsState.currencySymbol.symbol}",
+                                            text = "${formatDenomination(denom, isCoin)} ${if (!isCoin && denom >= 100) settingsState.currencySymbol.symbol else ""}",
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                         Text(
@@ -468,6 +483,7 @@ fun SumadorScreen(
         )
     }
 
+    // Diálogo de ajustes
     if (showSettingsDialog) {
         SettingsBottomSheet(
             settingsState = settingsState,
@@ -513,7 +529,7 @@ fun SumadorScreen(
                 showAboutDialog = true
             },
             onCheckForUpdates = onCheckForUpdates,
-            onManageDenominations = onNavigateToManageDenominations // Pasamos el nuevo callback
+            onManageDenominations = onNavigateToManageDenominations
         )
     }
 
@@ -527,6 +543,7 @@ fun SumadorScreen(
 @Composable
 fun BillInputRow(
     denomination: Int,
+    isCoin: Boolean,
     value: String,
     onValueChange: (String) -> Unit,
     currencySymbol: String
@@ -569,11 +586,11 @@ fun BillInputRow(
                     modifier = Modifier.size(24.dp)
                 )
                 Text(
-                    text = formatDenomination(denomination),
+                    text = formatDenomination(denomination, isCoin),
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                if (denomination >= 100) {
+                if (!isCoin && denomination >= 100) {
                     Text(
                         text = currencySymbol,
                         style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -666,24 +683,46 @@ fun BillInputRow(
 
 // ===================== FUNCIONES AUXILIARES =====================
 
+/**
+ * Formatea un monto en centavos a una cadena con separador de decimales.
+ * Ej: 1000L -> "10", 1050L -> "10.50"
+ */
 fun formatCurrency(amount: Long): String {
     val whole = amount / 100
     val cents = amount % 100
     return if (cents == 0L) whole.toString() else "$whole.${String.format("%02d", cents)}"
 }
 
-fun formatDenomination(denom: Int): String {
-    return if (denom % 100 == 0) {
-        (denom / 100).toString()
+/**
+ * Formatea una denominación según su tipo (moneda o billete).
+ * Moneda -> se muestra con el símbolo ¢ (ej: 25¢)
+ * Billete -> se muestra como número entero (ej: 100 -> "1" o "100")
+ */
+fun formatDenomination(denom: Int, isCoin: Boolean): String {
+    return if (isCoin) {
+        "${denom}¢"
     } else {
-        "$denom¢"
+        if (denom % 100 == 0) (denom / 100).toString()
+        else "${denom / 100}.${String.format("%02d", denom % 100)}"
     }
 }
 
-fun shareCurrentSum(context: Context, state: SumadorState, currency: CurrencySymbol) {
+/**
+ * Comparte la suma actual a través de un intent ACTION_SEND.
+ * Incluye el detalle de cada denominación usando el tipo para formatear.
+ */
+fun shareCurrentSum(
+    context: Context,
+    state: SumadorState,
+    currency: CurrencySymbol,
+    denominations: List<CustomDenominationEntity>
+) {
+    val isCoinMap = denominations.associate { it.denomination to it.isCoin }
+
     val sb = StringBuilder()
     sb.append("💰 ${context.getString(R.string.total)}: ${formatCurrency(state.total)} ${currency.symbol}\n\n")
     sb.append("${context.getString(R.string.detail_label)}:\n")
+
     state.cantidades
         .filter { it.value.toIntOrNull() ?: 0 > 0 }
         .toList()
@@ -692,9 +731,11 @@ fun shareCurrentSum(context: Context, state: SumadorState, currency: CurrencySym
             val count = countStr.toIntOrNull() ?: 0
             if (count > 0) {
                 val value = denom * count
-                sb.append("  ${formatDenomination(denom)} x $count = ${formatCurrency(value.toLong())}\n")
+                val isCoin = isCoinMap[denom] ?: (denom % 100 != 0)
+                sb.append("  ${formatDenomination(denom, isCoin)} x $count = ${formatCurrency(value.toLong())}\n")
             }
         }
+
     val shareText = sb.toString()
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"

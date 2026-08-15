@@ -523,7 +523,9 @@ fun shareSum(context: android.content.Context, sum: SavedSumEntity) {
     sb.append("${context.getString(R.string.detail_label)}:\n")
     denominations.entries.sortedByDescending { it.key }.forEach { (denom, count) ->
         if (count > 0) {
-            sb.append("  ${formatDenomination(denom)} x $count = ${formatCurrency((denom * count).toLong())}\n")
+            // Determinar si es moneda (si no es múltiplo de 100)
+            val isCoin = denom % 100 != 0
+            sb.append("  ${formatDenomination(denom, isCoin)} x $count = ${formatCurrency((denom * count).toLong())}\n")
         }
     }
     val shareText = sb.toString()
@@ -671,12 +673,13 @@ fun SavedSumDetailBottomSheet(
                     Spacer(Modifier.height(4.dp))
                     denominations.entries.sortedBy { it.key }.forEach { (denom, count) ->
                         if (count > 0) {
+                            val isCoin = denom % 100 != 0
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "${formatDenomination(denom)} x $count",
+                                    text = "${formatDenomination(denom, isCoin)} x $count",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

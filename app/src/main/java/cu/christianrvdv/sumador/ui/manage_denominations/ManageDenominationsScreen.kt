@@ -32,8 +32,8 @@ fun ManageDenominationsScreen(
     var editingEntity by remember { mutableStateOf<CustomDenominationEntity?>(null) }
     var deletingEntity by remember { mutableStateOf<CustomDenominationEntity?>(null) }
 
-    // Estado para el campo de texto en diálogos
     var inputText by remember { mutableStateOf("") }
+    var isCoin by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -45,10 +45,7 @@ fun ManageDenominationsScreen(
                     }
                 },
                 actions = {
-                    // Botón para restablecer a las predeterminadas
-                    IconButton(onClick = {
-                        viewModel.resetToDefaults()
-                    }) {
+                    IconButton(onClick = { viewModel.resetToDefaults() }) {
                         Icon(Icons.Default.Restore, contentDescription = stringResource(R.string.reset_to_defaults))
                     }
                 },
@@ -62,7 +59,11 @@ fun ManageDenominationsScreen(
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { showAddDialog = true },
+                onClick = {
+                    inputText = ""
+                    isCoin = false
+                    showAddDialog = true
+                },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
@@ -82,7 +83,13 @@ fun ManageDenominationsScreen(
                     entity = entity,
                     onEdit = {
                         editingEntity = entity
-                        inputText = entity.denomination.toString()
+                        // Mostrar el valor nominal en el campo de texto (no en centavos)
+                        inputText = if (entity.isCoin) {
+                            entity.denomination.toString()
+                        } else {
+                            (entity.denomination / 100).toString()
+                        }
+                        isCoin = entity.isCoin
                         showEditDialog = true
                     },
                     onDelete = {
@@ -128,51 +135,59 @@ fun ManageDenominationsScreen(
             }
         }
 
-        // Diálogo para agregar
+        // Diálogo Agregar
         if (showAddDialog) {
             DenominationDialog(
                 title = stringResource(R.string.add_denomination),
                 inputText = inputText,
+                isCoin = isCoin,
                 onInputChange = { inputText = it },
+                onCoinChange = { isCoin = it },
                 onConfirm = {
                     val value = inputText.toIntOrNull()
                     if (value != null && value > 0) {
-                        viewModel.addDenomination(value)
+                        viewModel.addDenomination(value, isCoin)
                         inputText = ""
+                        isCoin = false
                         showAddDialog = false
                     }
                 },
                 onDismiss = {
                     inputText = ""
+                    isCoin = false
                     showAddDialog = false
                 }
             )
         }
 
-        // Diálogo para editar
+        // Diálogo Editar
         if (showEditDialog && editingEntity != null) {
             DenominationDialog(
                 title = stringResource(R.string.edit_denomination),
                 inputText = inputText,
+                isCoin = isCoin,
                 onInputChange = { inputText = it },
+                onCoinChange = { isCoin = it },
                 onConfirm = {
                     val value = inputText.toIntOrNull()
                     if (value != null && value > 0) {
-                        viewModel.updateDenomination(editingEntity!!, value)
+                        viewModel.updateDenomination(editingEntity!!, value, isCoin)
                         inputText = ""
+                        isCoin = false
                         showEditDialog = false
                         editingEntity = null
                     }
                 },
                 onDismiss = {
                     inputText = ""
+                    isCoin = false
                     showEditDialog = false
                     editingEntity = null
                 }
             )
         }
 
-        // Diálogo de confirmación para eliminar
+        // Diálogo Eliminar
         if (showDeleteDialog && deletingEntity != null) {
             AlertDialog(
                 onDismissRequest = {
@@ -184,7 +199,7 @@ fun ManageDenominationsScreen(
                     Text(
                         stringResource(
                             R.string.delete_denomination_message,
-                            formatDenomination(deletingEntity!!.denomination)
+                            formatDenomination(deletingEntity!!.denomination, deletingEntity!!.isCoin)
                         )
                     )
                 },
@@ -232,7 +247,7 @@ private fun DenominationItem(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = formatDenomination(entity.denomination),
+                text = formatDenomination(entity.denomination, entity.isCoin),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -253,7 +268,9 @@ private fun DenominationItem(
 private fun DenominationDialog(
     title: String,
     inputText: String,
+    isCoin: Boolean,
     onInputChange: (String) -> Unit,
+    onCoinChange: (Boolean) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -261,14 +278,33 @@ private fun DenominationDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            OutlinedTextField(
-                value = inputText,
-                onValueChange = onInputChange,
-                label = { Text(stringResource(R.string.denomination_value_label)) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
+            Column {
+                OutlinedTextField(
+                    value = inputText,
+                    onValueChange = onInputChange,
+                    label = { Text(stringResource(R.string.denomination_value_label)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(text = "Tipo:", style = MaterialTheme.typography.bodyMedium)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    RadioButton(
+                        selected = !isCoin,
+                        onClick = { onCoinChange(false) }
+                    )
+                    Text("Billete")
+                    RadioButton(
+                        selected = isCoin,
+                        onClick = { onCoinChange(true) }
+                    )
+                    Text("Moneda")
+                }
+            }
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
