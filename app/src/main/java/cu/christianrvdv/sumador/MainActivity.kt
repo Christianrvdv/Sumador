@@ -17,9 +17,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
@@ -161,8 +163,15 @@ class MainActivity : ComponentActivity() {
             if (showUpdateDialog && updateInfo != null) {
                 AlertDialog(
                     onDismissRequest = { showUpdateDialog = false },
-                    title = { Text("Actualización disponible") },
-                    text = { Text("Hay una nueva versión (${updateInfo!!.version}) disponible. ¿Deseas descargarla e instalarla?") },
+                    title = { Text(stringResource(R.string.update_dialog_available_title)) },
+                    text = {
+                        Text(
+                            stringResource(
+                                R.string.update_dialog_available_message,
+                                updateInfo!!.version
+                            )
+                        )
+                    },
                     confirmButton = {
                         TextButton(
                             onClick = {
@@ -175,12 +184,12 @@ class MainActivity : ComponentActivity() {
                                 showDownloadStartedDialog = true
                             }
                         ) {
-                            Text("Actualizar")
+                            Text(stringResource(R.string.update_dialog_update_button))
                         }
                     },
                     dismissButton = {
                         TextButton(onClick = { showUpdateDialog = false }) {
-                            Text("Cancelar")
+                            Text(stringResource(R.string.update_dialog_cancel_button))
                         }
                     }
                 )
@@ -190,13 +199,13 @@ class MainActivity : ComponentActivity() {
             if (showDownloadStartedDialog) {
                 AlertDialog(
                     onDismissRequest = { showDownloadStartedDialog = false },
-                    title = { Text("Descarga iniciada") },
+                    title = { Text(stringResource(R.string.update_dialog_download_started_title)) },
                     text = {
                         Column {
-                            Text("La actualización se está descargando en segundo plano. Recibirás una notificación cuando termine.")
+                            Text(stringResource(R.string.update_dialog_download_started_message))
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Si la instalación no comienza automáticamente, ve a Configuración > Aplicaciones > Sumador > Instalar desde orígenes desconocidos y actívalo.",
+                                text = stringResource(R.string.update_dialog_download_started_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -204,7 +213,7 @@ class MainActivity : ComponentActivity() {
                     },
                     confirmButton = {
                         TextButton(onClick = { showDownloadStartedDialog = false }) {
-                            Text("Aceptar")
+                            Text(stringResource(R.string.update_dialog_accept_button))
                         }
                     }
                 )
@@ -218,13 +227,13 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .padding(24.dp)
                     ) {
-                        Column (
+                        Column(
                             modifier = Modifier
                                 .padding(24.dp)
                                 .fillMaxWidth(),
-                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text("Buscando actualizaciones...")
+                            Text(stringResource(R.string.update_dialog_checking_title))
                             Spacer(modifier = Modifier.height(16.dp))
                             LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                         }
@@ -236,11 +245,11 @@ class MainActivity : ComponentActivity() {
             if (showNoUpdateDialog) {
                 AlertDialog(
                     onDismissRequest = { showNoUpdateDialog = false },
-                    title = { Text("Sin actualizaciones") },
-                    text = { Text("Ya tienes la versión más reciente instalada.") },
+                    title = { Text(stringResource(R.string.update_dialog_no_update_title)) },
+                    text = { Text(stringResource(R.string.update_dialog_no_update_message)) },
                     confirmButton = {
                         TextButton(onClick = { showNoUpdateDialog = false }) {
-                            Text("Aceptar")
+                            Text(stringResource(R.string.update_dialog_accept_button))
                         }
                     }
                 )
@@ -250,11 +259,11 @@ class MainActivity : ComponentActivity() {
             if (showUpdateErrorDialog) {
                 AlertDialog(
                     onDismissRequest = { showUpdateErrorDialog = false },
-                    title = { Text("Error") },
-                    text = { Text("Ocurrió un error al verificar las actualizaciones. Inténtalo de nuevo más tarde.") },
+                    title = { Text(stringResource(R.string.update_dialog_error_title)) },
+                    text = { Text(stringResource(R.string.update_dialog_error_message)) },
                     confirmButton = {
                         TextButton(onClick = { showUpdateErrorDialog = false }) {
-                            Text("Aceptar")
+                            Text(stringResource(R.string.update_dialog_accept_button))
                         }
                     }
                 )
@@ -264,11 +273,11 @@ class MainActivity : ComponentActivity() {
             if (showNetworkErrorDialog) {
                 AlertDialog(
                     onDismissRequest = { showNetworkErrorDialog = false },
-                    title = { Text("Sin conexión") },
-                    text = { Text("No se pudo conectar con el servidor de actualizaciones. Verifica tu conexión a Internet e inténtalo de nuevo.") },
+                    title = { Text(stringResource(R.string.update_dialog_network_error_title)) },
+                    text = { Text(stringResource(R.string.update_dialog_network_error_message)) },
                     confirmButton = {
                         TextButton(onClick = { showNetworkErrorDialog = false }) {
-                            Text("Aceptar")
+                            Text(stringResource(R.string.update_dialog_accept_button))
                         }
                     }
                 )
@@ -325,13 +334,9 @@ class MainActivity : ComponentActivity() {
                     (application as SumadorApplication).pendingUpdate = null
                 } else {
                     Log.d("MainActivity", "APK no encontrado en caché, no se puede instalar automáticamente")
-                    // Si no existe, quizás deberíamos limpiar la pendiente o reintentar descargar
-                    // (Pero si el usuario canceló la descarga, no debería estar pendiente)
                 }
             } else {
-                // Permiso no concedido, esperar a que el usuario lo habilite desde la configuración
                 Log.d("MainActivity", "Permiso de instalación no concedido, esperando...")
-                // No limpiamos pendingUpdate para que al regresar de nuevo se intente
             }
         }
     }

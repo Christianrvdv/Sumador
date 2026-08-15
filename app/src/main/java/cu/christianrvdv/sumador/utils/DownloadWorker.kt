@@ -80,7 +80,7 @@ class DownloadWorker(
         // Si el APK ya existe, instalar directamente
         if (apkFile.exists()) {
             if (builder != null) {
-                builder.setContentText("APK ya descargado, instalando...")
+                builder.setContentText(applicationContext.getString(R.string.update_notification_already_downloaded))
                     .setProgress(0, 0, false)
                 notificationManager.notify(NOTIFICATION_ID, builder.build())
             }
@@ -116,7 +116,9 @@ class DownloadWorker(
                 if (builder != null && contentLength > 0) {
                     val progress = (totalBytesRead.toFloat() / contentLength.toFloat() * 100).toInt()
                     builder.setProgress(100, progress, false)
-                    builder.setContentText("Descargando $progress%")
+                    builder.setContentText(
+                        applicationContext.getString(R.string.update_notification_downloading_progress, progress)
+                    )
                     notificationManager.notify(NOTIFICATION_ID, builder.build())
                 }
             }
@@ -127,7 +129,7 @@ class DownloadWorker(
 
             if (apkFile.exists()) {
                 if (builder != null) {
-                    builder.setContentText("Descarga completada. Instalando...")
+                    builder.setContentText(applicationContext.getString(R.string.update_notification_completed))
                         .setProgress(0, 0, false)
                     notificationManager.notify(NOTIFICATION_ID, builder.build())
                 }
@@ -135,7 +137,7 @@ class DownloadWorker(
                 Result.success()
             } else {
                 if (builder != null) {
-                    builder.setContentText("Error: archivo no encontrado")
+                    builder.setContentText(applicationContext.getString(R.string.update_notification_error_file_not_found))
                         .setProgress(0, 0, false)
                     notificationManager.notify(NOTIFICATION_ID, builder.build())
                 }
@@ -143,7 +145,9 @@ class DownloadWorker(
             }
         } catch (e: Exception) {
             if (builder != null) {
-                builder.setContentText("Error: ${e.message}")
+                builder.setContentText(
+                    applicationContext.getString(R.string.update_notification_error_generic, e.message ?: "")
+                )
                     .setProgress(0, 0, false)
                 notificationManager.notify(NOTIFICATION_ID, builder.build())
             }
@@ -158,8 +162,8 @@ class DownloadWorker(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(applicationContext, "update_channel")
-            .setContentTitle("Descargando actualización")
-            .setContentText("Preparando...")
+            .setContentTitle(applicationContext.getString(R.string.update_notification_title))
+            .setContentText(applicationContext.getString(R.string.update_notification_preparing))
             .setSmallIcon(R.mipmap.ic_launcher)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
@@ -180,8 +184,8 @@ class DownloadWorker(
                 // Mostrar notificación informativa (si hay permiso de notificaciones)
                 val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 val builder = NotificationCompat.Builder(applicationContext, "update_channel")
-                    .setContentTitle("Instalación bloqueada")
-                    .setContentText("Habilita 'Instalar desde orígenes desconocidos' para esta app en Configuración.")
+                    .setContentTitle(applicationContext.getString(R.string.update_notification_install_blocked_title))
+                    .setContentText(applicationContext.getString(R.string.update_notification_install_blocked_text))
                     .setSmallIcon(R.mipmap.ic_launcher)
                     .setAutoCancel(true)
                 notificationManager.notify(NOTIFICATION_ID + 1, builder.build())

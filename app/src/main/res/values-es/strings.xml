@@ -109,6 +109,9 @@
     <!-- Settings - Use Coins -->
     <string name="use_coins_label">Usar monedas</string>
     <string name="use_coins_description">Mostrar monedas junto a los billetes para contar</string>
+    <!-- Settings - Actualizaciones -->
+    <string name="updates_section_title">Actualizaciones</string>
+    <string name="check_updates_button">Buscar actualizaciones</string>
 
     <!-- New strings for missing hardcoded texts -->
     <string name="back_label">Atrás</string>
@@ -129,4 +132,41 @@
     <string name="summary_label">Resumen</string>
     <string name="no_bills_selected">No hay billetes seleccionados.</string>
     <string name="total_summary">Total:</string>
+
+    <!-- ===== ACTUALIZACIONES ===== -->
+    <string name="update_channel_name">Actualizaciones</string>
+    <string name="update_channel_description">Notificaciones de descarga de actualizaciones</string>
+
+    <!-- DownloadWorker -->
+    <string name="update_notification_title">Descargando actualización</string>
+    <string name="update_notification_preparing">Preparando…</string>
+    <string name="update_notification_already_downloaded">APK ya descargado, instalando…</string>
+    <string name="update_notification_downloading_progress">Descargando %d%%</string>
+    <string name="update_notification_completed">Descarga completada. Instalando…</string>
+    <string name="update_notification_error_file_not_found">Error: archivo no encontrado</string>
+    <string name="update_notification_error_generic">Error: %s</string>
+    <string name="update_notification_install_blocked_title">Instalación bloqueada</string>
+    <string name="update_notification_install_blocked_text">Habilita \'Instalar desde orígenes desconocidos\' para esta app en Configuración.</string>
+
+    <!-- MainActivity dialogs -->
+    <string name="update_dialog_available_title">Actualización disponible</string>
+    <string name="update_dialog_available_message">Hay una nueva versión (%s) disponible. ¿Deseas descargarla e instalarla?</string>
+    <string name="update_dialog_update_button">Actualizar</string>
+    <string name="update_dialog_cancel_button">Cancelar</string>
+
+    <string name="update_dialog_download_started_title">Descarga iniciada</string>
+    <string name="update_dialog_download_started_message">La actualización se está descargando en segundo plano. Recibirás una notificación cuando termine.</string>
+    <string name="update_dialog_download_started_hint">Si la instalación no comienza automáticamente, ve a Configuración > Aplicaciones > Sumador > Instalar desde orígenes desconocidos y actívalo.</string>
+    <string name="update_dialog_accept_button">Aceptar</string>
+
+    <string name="update_dialog_checking_title">Buscando actualizaciones…</string>
+
+    <string name="update_dialog_no_update_title">Sin actualizaciones</string>
+    <string name="update_dialog_no_update_message">Ya tienes la versión más reciente instalada.</string>
+
+    <string name="update_dialog_error_title">Error</string>
+    <string name="update_dialog_error_message">Ocurrió un error al verificar las actualizaciones. Inténtalo de nuevo más tarde.</string>
+
+    <string name="update_dialog_network_error_title">Sin conexión</string>
+    <string name="update_dialog_network_error_message">No se pudo conectar con el servidor de actualizaciones. Verifica tu conexión a Internet e inténtalo de nuevo.</string>
 </resources>

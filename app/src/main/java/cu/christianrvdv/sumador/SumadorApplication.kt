@@ -22,10 +22,10 @@ class SumadorApplication : Application() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 "update_channel",
-                "Actualizaciones",
+                getString(R.string.update_channel_name),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = "Notificaciones de descarga de actualizaciones"
+                description = getString(R.string.update_channel_description)
                 setShowBadge(false)
             }
             val manager = getSystemService(NotificationManager::class.java)

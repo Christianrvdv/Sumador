@@ -109,6 +109,9 @@
     <!-- Settings - Use Coins -->
     <string name="use_coins_label">Use coins</string>
     <string name="use_coins_description">Show coins alongside bills for counting</string>
+    <!-- Settings - Updates -->
+    <string name="updates_section_title">Updates</string>
+    <string name="check_updates_button">Check for updates</string>
 
     <!-- New strings for missing hardcoded texts -->
     <string name="back_label">Back</string>
@@ -129,4 +132,41 @@
     <string name="summary_label">Summary</string>
     <string name="no_bills_selected">No bills selected.</string>
     <string name="total_summary">Total:</string>
+
+    <!-- ===== UPDATES ===== -->
+    <string name="update_channel_name">Updates</string>
+    <string name="update_channel_description">Notifications for update downloads</string>
+
+    <!-- DownloadWorker -->
+    <string name="update_notification_title">Downloading update</string>
+    <string name="update_notification_preparing">Preparing…</string>
+    <string name="update_notification_already_downloaded">APK already downloaded, installing…</string>
+    <string name="update_notification_downloading_progress">Downloading %d%%</string>
+    <string name="update_notification_completed">Download completed. Installing…</string>
+    <string name="update_notification_error_file_not_found">Error: file not found</string>
+    <string name="update_notification_error_generic">Error: %s</string>
+    <string name="update_notification_install_blocked_title">Installation blocked</string>
+    <string name="update_notification_install_blocked_text">Enable \'Install from unknown sources\' for this app in Settings.</string>
+
+    <!-- MainActivity dialogs -->
+    <string name="update_dialog_available_title">Update available</string>
+    <string name="update_dialog_available_message">A new version (%s) is available. Do you want to download and install it?</string>
+    <string name="update_dialog_update_button">Update</string>
+    <string name="update_dialog_cancel_button">Cancel</string>
+
+    <string name="update_dialog_download_started_title">Download started</string>
+    <string name="update_dialog_download_started_message">The update is being downloaded in the background. You will receive a notification when it finishes.</string>
+    <string name="update_dialog_download_started_hint">If installation does not start automatically, go to Settings > Apps > Sumador > Install unknown apps and enable it.</string>
+    <string name="update_dialog_accept_button">OK</string>
+
+    <string name="update_dialog_checking_title">Checking for updates…</string>
+
+    <string name="update_dialog_no_update_title">No updates</string>
+    <string name="update_dialog_no_update_message">You already have the latest version installed.</string>
+
+    <string name="update_dialog_error_title">Error</string>
+    <string name="update_dialog_error_message">An error occurred while checking for updates. Please try again later.</string>
+
+    <string name="update_dialog_network_error_title">No connection</string>
+    <string name="update_dialog_network_error_message">Could not connect to the update server. Check your internet connection and try again.</string>
 </resources>

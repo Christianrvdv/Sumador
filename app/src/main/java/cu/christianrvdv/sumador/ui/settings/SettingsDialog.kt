@@ -31,7 +31,7 @@ fun SettingsBottomSheet(
     onKeepScreenOnChange: (Boolean) -> Unit,
     onUseCoinsChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit,
-    onCheckForUpdates: () -> Unit // NUEVO
+    onCheckForUpdates: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -168,13 +168,13 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // Nueva sección de Actualizaciones
+            // Sección de Actualizaciones (ahora traducible)
             SettingsSection(
                 icon = Icons.Default.SystemUpdate,
-                title = "Actualizaciones"
+                title = stringResource(R.string.updates_section_title)
             ) {
                 SettingsButtonItem(
-                    label = "Buscar actualizaciones",
+                    label = stringResource(R.string.check_updates_button),
                     icon = Icons.Default.Search,
                     onClick = onCheckForUpdates
                 )
