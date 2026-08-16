@@ -206,4 +206,5 @@
     <string name="unsaved_warning_save_and_exit">Guardar y salir</string>
     <string name="unsaved_warning_exit_without_saving">Salir sin guardar</string>
     <string name="unsaved_warning_message">El guardado automático está desactivado. Si sales ahora, los valores introducidos se perderán. Para conservarlos, activa el guardado automático en los ajustes.</string>
+    <string name="unsaved_warning_exit">Salir</string>
 </resources>

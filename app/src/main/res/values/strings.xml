@@ -206,4 +206,5 @@
     <string name="unsaved_warning_save_and_exit">Save and exit</string>
     <string name="unsaved_warning_exit_without_saving">Exit without saving</string>
     <string name="unsaved_warning_message">Automatic saving is disabled. If you exit now, the current values will be lost. To keep them, enable auto‑save in Settings.</string>
+    <string name="unsaved_warning_exit">Exit</string>
 </resources>
