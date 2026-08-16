@@ -2,8 +2,10 @@ package cu.christianrvdv.sumador.utils
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.Keep
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -20,7 +22,6 @@ class UpdateManager(private val context: Context) {
         private const val GITHUB_API_URL =
             "https://api.github.com/repos/christianrvdv/Sumador/releases/latest"
 
-        // Cliente OkHttp con timeouts más largos
         private val okHttpClient = OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
@@ -57,8 +58,15 @@ class UpdateManager(private val context: Context) {
 
             Log.d(TAG, "Respuesta de GitHub: $json")
 
+            // Usamos TypeToken para una deserialización robusta
             val gson = GsonBuilder().setLenient().create()
-            val release = gson.fromJson(json, Release::class.java)
+            val type = object : TypeToken<Release>() {}.type
+            val release: Release = gson.fromJson(json, type)
+
+            // Log para depuración
+            Log.d(TAG, "release.tagName = ${release.tagName}")
+            Log.d(TAG, "release.assets = ${release.assets}")
+            Log.d(TAG, "release.assets?.size = ${release.assets?.size}")
 
             val tagName = release.tagName
             if (tagName.isNullOrEmpty()) {
@@ -75,7 +83,7 @@ class UpdateManager(private val context: Context) {
             if (compareVersions(latestVersion, currentVersion) > 0) {
                 val assets = release.assets
                 if (assets.isNullOrEmpty()) {
-                    Log.e(TAG, "No hay assets en el release")
+                    Log.e(TAG, "No hay assets en el release. assets=$assets")
                     return@withContext UpdateResult.Error(Exception("No assets found"))
                 }
                 val apkAsset = assets.firstOrNull { it.name.endsWith(".apk") }
@@ -99,10 +107,9 @@ class UpdateManager(private val context: Context) {
                 return@withContext UpdateResult.NoUpdate
             }
         } catch (e: CancellationException) {
-            // La corrutina fue cancelada (por ejemplo, al destruir la actividad)
             Log.d(TAG, "Verificación de actualización cancelada")
-            call.cancel() // Cancela la petición en curso
-            throw e // Propaga la cancelación
+            call.cancel()
+            throw e
         } catch (e: UnknownHostException) {
             Log.e(TAG, "Error de red al verificar actualización", e)
             return@withContext UpdateResult.NetworkError
@@ -131,11 +138,14 @@ class UpdateManager(private val context: Context) {
         return 0
     }
 
+    // Clases anidadas con @Keep para evitar ofuscación
+    @Keep
     data class Release(
         @SerializedName("tag_name") val tagName: String?,
         val assets: List<Asset>?
     )
 
+    @Keep
     data class Asset(
         val name: String,
         @SerializedName("browser_download_url") val browserDownloadUrl: String
