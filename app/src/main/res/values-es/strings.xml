@@ -203,7 +203,7 @@
 
     <!-- Advertencia al salir sin auto-save -->
     <string name="unsaved_warning_title">Atención</string>
-    <string name="unsaved_warning_message">El guardado automático está desactivado. La suma actual se perderá si sales. ¿Qué deseas hacer?</string>
     <string name="unsaved_warning_save_and_exit">Guardar y salir</string>
     <string name="unsaved_warning_exit_without_saving">Salir sin guardar</string>
+    <string name="unsaved_warning_message">El guardado automático está desactivado. Si sales ahora, los valores introducidos se perderán. Para conservarlos, activa el guardado automático en los ajustes.</string>
 </resources>

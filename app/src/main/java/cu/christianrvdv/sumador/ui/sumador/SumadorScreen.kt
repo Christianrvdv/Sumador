@@ -569,12 +569,11 @@ fun SumadorScreen(
                     )
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Botón 1: Guardar y salir (destacado)
+                    // Botón 1: Salir (destacado)
                     Button(
                         onClick = {
                             showUnsavedWarning = false
-                            shouldExitAfterSave = true
-                            showSaveDialog = true
+                            navController.popBackStack()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
@@ -583,26 +582,11 @@ fun SumadorScreen(
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Text(stringResource(R.string.unsaved_warning_save_and_exit))
+                        Text(stringResource(R.string.unsaved_warning_exit))
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Botón 2: Salir sin guardar (texto)
-                    TextButton(
-                        onClick = {
-                            showUnsavedWarning = false
-                            navController.popBackStack()
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    ) {
-                        Text(stringResource(R.string.unsaved_warning_exit_without_saving))
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Botón 3: Cancelar (texto)
+                    // Botón 2: Cancelar (texto)
                     TextButton(
                         onClick = { showUnsavedWarning = false },
                         modifier = Modifier.fillMaxWidth(),

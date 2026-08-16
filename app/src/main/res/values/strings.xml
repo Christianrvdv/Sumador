@@ -203,7 +203,7 @@
 
     <!-- Unsaved warning when exiting without auto-save -->
     <string name="unsaved_warning_title">Warning</string>
-    <string name="unsaved_warning_message">Automatic saving is disabled. The current sum will be lost if you exit. What would you like to do?</string>
     <string name="unsaved_warning_save_and_exit">Save and exit</string>
     <string name="unsaved_warning_exit_without_saving">Exit without saving</string>
+    <string name="unsaved_warning_message">Automatic saving is disabled. If you exit now, the current values will be lost. To keep them, enable auto‑save in Settings.</string>
 </resources>
