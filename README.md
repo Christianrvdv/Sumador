@@ -1,7 +1,6 @@
-
 # Sumador – Count bills and coins quickly
 
-[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/Christianrvdv/Sumador/releases/tag/v1.3.0)
+[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/Christianrvdv/Sumador/releases/tag/v1.4.0)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-brightgreen)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple)](https://kotlinlang.org)
@@ -9,17 +8,7 @@
 **Sumador** is a simple and intuitive Android app for counting bills and coins.  
 It is designed for merchants, cashiers, and anyone who handles cash – helping you keep track of totals quickly and accurately.
 
-> ✨ **New in v1.3.0:** History with search & advanced filters, share sums, coin support, and keep screen on option.
-
----
-
-## 📸 Screenshots
-
-| Main screen | History | Filters |
-|-------------|---------|---------|
-| ![Main](screenshots/main.png) | ![History](screenshots/history.png) | ![Filters](screenshots/filters.png) |
-
-*(Replace with actual screenshots)*
+> ✨ **New in v1.4.0:** Custom denomination management – add, edit, or delete your own bill/coin values per currency. Also improved coin support and database migration.
 
 ---
 
@@ -28,15 +17,17 @@ It is designed for merchants, cashiers, and anyone who handles cash – helping 
 | Feature | Description |
 |---------|-------------|
 | 💱 **Multiple currencies** | Cuban Peso ($), US Dollar (USD), Euro (€) |
-| 🪙 **Coin support** | Toggle bills/coins on/off – perfect for detailed counting |
-| 🔢 **Bill/coin order** | Ascending or descending order of denominations |
-| 💾 **Auto‑save** | Amounts are automatically saved and restored on app restart |
-| 🌗 **Themes** | Light, dark, and system default |
+| 🪙 **Coin & bill support** | Differentiate between coins and bills – each denomination can be marked as coin or bill |
+| 🛠️ **Custom denominations** | Add, edit, or delete denominations for each currency independently – the app will remember your custom list |
+| 🔢 **Sort order** | Ascending or descending order of denominations (applies to both bills and coins) |
+| 💾 **Auto‑save** | Amounts are automatically saved and restored on app restart (per currency) |
+| 🌗 **Themes** | Light, dark, and system default (with dynamic colour support on Android 12+) |
 | 🌐 **Languages** | English and Spanish (system default also supported) |
 | 📜 **History** | All saved sums with **search by name** and **advanced filters** (date range, amount range) |
 | 📤 **Share** | Share sums with others via any app (WhatsApp, email, etc.) – includes detailed breakdown |
 | 📱 **Keep screen on** | Prevents screen from turning off while using the app |
 | 🧹 **Clear confirmation** | Optional confirmation before clearing all amounts |
+| 🔄 **Update checker** | Built‑in update checker that downloads and installs new versions from GitHub releases |
 
 ---
 
@@ -45,10 +36,12 @@ It is designed for merchants, cashiers, and anyone who handles cash – helping 
 - **Kotlin** – 100% Kotlin
 - **Jetpack Compose** – Modern UI toolkit
 - **Material 3** – Latest Material Design
-- **Room** – Local database for saved sums
+- **Room** – Local database for saved sums and custom denominations
 - **DataStore** – Persistent storage for user settings and auto‑saved amounts
 - **Hilt** – Dependency injection
 - **Coroutines & Flow** – Asynchronous operations and reactive UI
+- **WorkManager** – Background download of updates
+- **OkHttp & Gson** – Network requests and JSON parsing for GitHub releases
 
 ---
 
@@ -92,7 +85,8 @@ The output will be in `app/build/outputs/apk/release/`.
 4. **Save** – Save the current sum to history with a custom name.
 5. **Share** – Share the current sum or any saved sum as text.
 6. **History** – View, search, filter, edit or delete saved sums.
-7. **Settings** – Access themes, currencies, language, sort order, auto‑save, confirmation, keep screen on, and coin toggle.
+7. **Settings** – Access themes, currencies, language, sort order, auto‑save, confirmation, keep screen on, coin toggle, and update checker.
+8. **Manage denominations** – From Settings, tap “Manage denominations” to add, edit, or remove bill/coin values for the currently selected currency. Changes are saved per currency.
 
 ---
 

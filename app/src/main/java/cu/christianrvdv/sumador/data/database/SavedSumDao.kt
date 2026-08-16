@@ -1,4 +1,3 @@
-// data/database/SavedSumDao.kt
 package cu.christianrvdv.sumador.data.database
 
 import androidx.room.Dao
@@ -6,7 +5,9 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.RawQuery
 import androidx.room.Update
+import androidx.sqlite.db.SupportSQLiteQuery
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -20,11 +21,6 @@ interface SavedSumDao {
     @Delete
     suspend fun delete(savedSum: SavedSumEntity)
 
-    // Original: sin filtros
-    @Query("SELECT * FROM saved_sums ORDER BY timestamp DESC")
-    fun getAll(): Flow<List<SavedSumEntity>>
-
-    // Nuevo: con filtros opcionales
     @Query("""
         SELECT * FROM saved_sums 
         WHERE (:name IS NULL OR name LIKE '%' || :name || '%')
@@ -41,6 +37,13 @@ interface SavedSumDao {
         totalMin: Long? = null,
         totalMax: Long? = null
     ): Flow<List<SavedSumEntity>>
+
+    // CORREGIDO: Se añade observedEntities
+    @RawQuery(observedEntities = [SavedSumEntity::class])
+    fun getFilteredOrdered(query: SupportSQLiteQuery): Flow<List<SavedSumEntity>>
+
+    @Query("DELETE FROM saved_sums")
+    suspend fun deleteAll()
 
     @Query("SELECT * FROM saved_sums WHERE id = :id")
     suspend fun getById(id: Long): SavedSumEntity?

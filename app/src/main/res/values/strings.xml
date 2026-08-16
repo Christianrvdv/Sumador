@@ -188,4 +188,16 @@
     <string name="reset_confirm">Yes, reset</string>
     <string name="currency_info_title">Current currency</string>
     <string name="currency_info_message">Changes made here will only affect the currently selected currency (%s).</string>
+
+    <!-- History sort & delete -->
+    <string name="order_by_label">Order by</string>
+    <string name="order_by_date">Date</string>
+    <string name="order_by_name">Name</string>
+    <string name="order_direction_asc">Ascending</string>
+    <string name="order_direction_desc">Descending</string>
+    <string name="delete_all">Delete all</string>
+    <string name="delete_all_confirmation_title">Delete all saved sums?</string>
+    <string name="delete_all_confirmation_message">This will permanently delete all saved sums. This action cannot be undone.</string>
+    <string name="delete_confirmation_title">Delete saved sum?</string>
+    <string name="delete_confirmation_message">Are you sure you want to delete "%s"?</string>
 </resources>

@@ -188,4 +188,16 @@
     <string name="reset_confirm">Sí, restablecer</string>
     <string name="currency_info_title">Moneda actual</string>
     <string name="currency_info_message">Los cambios realizados aquí solo afectarán a la moneda actualmente seleccionada (%s).</string>
+
+    <!-- Orden y borrado en historial -->
+    <string name="order_by_label">Ordenar por</string>
+    <string name="order_by_date">Fecha</string>
+    <string name="order_by_name">Nombre</string>
+    <string name="order_direction_asc">Ascendente</string>
+    <string name="order_direction_desc">Descendente</string>
+    <string name="delete_all">Eliminar todo</string>
+    <string name="delete_all_confirmation_title">¿Eliminar todas las sumas guardadas?</string>
+    <string name="delete_all_confirmation_message">Esto eliminará permanentemente todas las sumas guardadas. Esta acción no se puede deshacer.</string>
+    <string name="delete_confirmation_title">¿Eliminar suma guardada?</string>
+    <string name="delete_confirmation_message">¿Estás seguro de que quieres eliminar "%s"?</string>
 </resources>
