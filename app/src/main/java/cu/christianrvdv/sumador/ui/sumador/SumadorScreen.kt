@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import cu.christianrvdv.sumador.R
@@ -134,7 +135,10 @@ fun SumadorScreen(
                 },
                 actions = {
                     IconButton(onClick = onNavigateToHistory) {
-                        Icon(Icons.Default.History, contentDescription = stringResource(R.string.history_title))
+                        Icon(
+                            Icons.Default.History,
+                            contentDescription = stringResource(R.string.history_title)
+                        )
                     }
                     IconButton(onClick = { showAboutDialog = true }) {
                         Icon(
@@ -204,7 +208,10 @@ fun SumadorScreen(
                                 if (totalBills > 0) {
                                     Spacer(Modifier.width(8.dp))
                                     Text(
-                                        text = stringResource(R.string.total_bills_short, totalBills),
+                                        text = stringResource(
+                                            R.string.total_bills_short,
+                                            totalBills
+                                        ),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -342,7 +349,12 @@ fun SumadorScreen(
                         denomination = entity.denomination,
                         isCoin = entity.isCoin,
                         value = state.cantidades[entity.denomination] ?: "",
-                        onValueChange = { newValue -> viewModel.updateCantidad(entity.denomination, newValue) },
+                        onValueChange = { newValue ->
+                            viewModel.updateCantidad(
+                                entity.denomination,
+                                newValue
+                            )
+                        },
                         currencySymbol = settingsState.currencySymbol.symbol
                     )
                 }
@@ -438,7 +450,12 @@ fun SumadorScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "${formatDenomination(denom, isCoin)} ${if (!isCoin && denom >= 100) settingsState.currencySymbol.symbol else ""}",
+                                            text = "${
+                                                formatDenomination(
+                                                    denom,
+                                                    isCoin
+                                                )
+                                            } ${if (!isCoin && denom >= 100) settingsState.currencySymbol.symbol else ""}",
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                         Text(
@@ -477,10 +494,12 @@ fun SumadorScreen(
                 TextButton(
                     onClick = {
                         val finalName = if (saveName.isNotBlank()) saveName else {
-                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                            val dateFormat =
+                                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                             dateFormat.format(Date())
                         }
-                        val denominationsMap = state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
+                        val denominationsMap =
+                            state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
                         viewModel.saveCurrentSum(
                             name = finalName,
                             total = state.total,
@@ -513,39 +532,89 @@ fun SumadorScreen(
 
     // Diálogo de advertencia al salir sin auto-save
     if (showUnsavedWarning) {
-        AlertDialog(
-            onDismissRequest = { showUnsavedWarning = false },
-            title = { Text(stringResource(R.string.unsaved_warning_title)) },
-            text = { Text(stringResource(R.string.unsaved_warning_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showUnsavedWarning = false
-                        shouldExitAfterSave = true
-                        showSaveDialog = true
-                    }
+        Dialog(
+            onDismissRequest = { showUnsavedWarning = false }
+        ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(stringResource(R.string.unsaved_warning_save_and_exit))
-                }
-            },
-            dismissButton = {
-                Row {
+                    // Título
+                    Text(
+                        text = stringResource(R.string.unsaved_warning_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Mensaje
+                    Text(
+                        text = stringResource(R.string.unsaved_warning_message),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Botón 1: Guardar y salir (destacado)
+                    Button(
+                        onClick = {
+                            showUnsavedWarning = false
+                            shouldExitAfterSave = true
+                            showSaveDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(stringResource(R.string.unsaved_warning_save_and_exit))
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Botón 2: Salir sin guardar (texto)
                     TextButton(
                         onClick = {
                             showUnsavedWarning = false
                             navController.popBackStack()
-                        }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
                         Text(stringResource(R.string.unsaved_warning_exit_without_saving))
                     }
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Botón 3: Cancelar (texto)
                     TextButton(
-                        onClick = { showUnsavedWarning = false }
+                        onClick = { showUnsavedWarning = false },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     ) {
                         Text(stringResource(R.string.cancel))
                     }
                 }
             }
-        )
+        }
     }
 
     // Diálogo de ajustes
@@ -784,7 +853,14 @@ fun shareCurrentSum(
             if (count > 0) {
                 val value = denom * count
                 val isCoin = isCoinMap[denom] ?: (denom % 100 != 0)
-                sb.append("  ${formatDenomination(denom, isCoin)} x $count = ${formatCurrency(value.toLong())}\n")
+                sb.append(
+                    "  ${
+                        formatDenomination(
+                            denom,
+                            isCoin
+                        )
+                    } x $count = ${formatCurrency(value.toLong())}\n"
+                )
             }
         }
 
