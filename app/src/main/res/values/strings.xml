@@ -151,6 +151,8 @@
     <!-- MainActivity dialogs -->
     <string name="update_dialog_available_title">Update available</string>
     <string name="update_dialog_available_message">A new version (%s) is available. Do you want to download and install it?</string>
+    <!-- NEW: message when APK already downloaded -->
+    <string name="update_dialog_already_downloaded_message">Version %s has already been downloaded. Do you want to install it now?</string>
     <string name="update_dialog_update_button">Update</string>
     <string name="update_dialog_cancel_button">Cancel</string>
 

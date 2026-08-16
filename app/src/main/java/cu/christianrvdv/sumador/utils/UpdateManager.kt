@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import java.io.File
 import java.io.IOException
 import java.net.UnknownHostException
 import java.util.concurrent.TimeUnit
@@ -58,19 +59,13 @@ class UpdateManager(private val context: Context) {
 
             Log.d(TAG, "Respuesta de GitHub: $json")
 
-            // Usamos TypeToken para una deserialización robusta
             val gson = GsonBuilder().setLenient().create()
             val type = object : TypeToken<Release>() {}.type
             val release: Release = gson.fromJson(json, type)
 
-            // Log para depuración
-            Log.d(TAG, "release.tagName = ${release.tagName}")
-            Log.d(TAG, "release.assets = ${release.assets}")
-            Log.d(TAG, "release.assets?.size = ${release.assets?.size}")
-
             val tagName = release.tagName
             if (tagName.isNullOrEmpty()) {
-                Log.e(TAG, "tag_name es null o vacío en la respuesta")
+                Log.e(TAG, "tag_name es null o vacío")
                 return@withContext UpdateResult.Error(Exception("tag_name missing"))
             }
 
@@ -83,19 +78,38 @@ class UpdateManager(private val context: Context) {
             if (compareVersions(latestVersion, currentVersion) > 0) {
                 val assets = release.assets
                 if (assets.isNullOrEmpty()) {
-                    Log.e(TAG, "No hay assets en el release. assets=$assets")
+                    Log.e(TAG, "No hay assets en el release")
                     return@withContext UpdateResult.Error(Exception("No assets found"))
                 }
                 val apkAsset = assets.firstOrNull { it.name.endsWith(".apk") }
                 if (apkAsset != null) {
-                    Log.d(
-                        TAG,
-                        "Nueva versión $latestVersion, URL descarga: ${apkAsset.browserDownloadUrl}"
-                    )
+                    // --- Limpiar APKs obsoletos de versiones anteriores ---
+                    cleanOldApks(latestVersion)
+
+                    // --- Verificar si el APK ya fue descargado y es válido ---
+                    val apkFile = DownloadWorker.getApkFile(context, latestVersion)
+                    if (apkFile.exists() && DownloadWorker.isApkValid(context, apkFile)) {
+                        Log.d(TAG, "APK para la nueva versión ya existe y es válido, se instalará inmediatamente")
+                        // Instalamos directamente (se hace en el Worker, pero podemos notificar)
+                        DownloadWorker.start(context, apkAsset.browserDownloadUrl, latestVersion)
+                        return@withContext UpdateResult.Success(
+                            UpdateInfo(
+                                version = latestVersion,
+                                downloadUrl = apkAsset.browserDownloadUrl,
+                                alreadyDownloaded = true
+                            )
+                        )
+                    } else {
+                        // Si existe pero es inválido, eliminarlo para descargar de nuevo
+                        if (apkFile.exists()) apkFile.delete()
+                    }
+
+                    Log.d(TAG, "Nueva versión $latestVersion, URL descarga: ${apkAsset.browserDownloadUrl}")
                     return@withContext UpdateResult.Success(
                         UpdateInfo(
                             version = latestVersion,
-                            downloadUrl = apkAsset.browserDownloadUrl
+                            downloadUrl = apkAsset.browserDownloadUrl,
+                            alreadyDownloaded = false
                         )
                     )
                 } else {
@@ -103,22 +117,39 @@ class UpdateManager(private val context: Context) {
                     return@withContext UpdateResult.Error(Exception("No APK found"))
                 }
             } else {
-                Log.d(TAG, "La versión actual ($currentVersion) ya es la más reciente.")
+                Log.d(TAG, "La versión actual ya es la más reciente.")
                 return@withContext UpdateResult.NoUpdate
             }
         } catch (e: CancellationException) {
-            Log.d(TAG, "Verificación de actualización cancelada")
+            Log.d(TAG, "Verificación cancelada")
             call.cancel()
             throw e
         } catch (e: UnknownHostException) {
-            Log.e(TAG, "Error de red al verificar actualización", e)
+            Log.e(TAG, "Error de red")
             return@withContext UpdateResult.NetworkError
         } catch (e: IOException) {
-            Log.e(TAG, "Error de E/S al verificar actualización", e)
+            Log.e(TAG, "Error de E/S")
             return@withContext UpdateResult.Error(e)
         } catch (e: Exception) {
-            Log.e(TAG, "Error al verificar actualización", e)
+            Log.e(TAG, "Error general")
             return@withContext UpdateResult.Error(e)
+        }
+    }
+
+    // Limpiar APKs de versiones anteriores (excepto la actual y la nueva)
+    private fun cleanOldApks(newVersion: String) {
+        val updatesDir = File(context.filesDir, "updates")
+        if (!updatesDir.exists()) return
+        val files = updatesDir.listFiles() ?: return
+        for (file in files) {
+            val name = file.name
+            if (name.startsWith("sumador_v") && name.endsWith(".apk")) {
+                val version = name.removePrefix("sumador_v").removeSuffix(".apk")
+                if (version != newVersion) {
+                    file.delete()
+                    Log.d(TAG, "APK antiguo eliminado: $name")
+                }
+            }
         }
     }
 
@@ -138,7 +169,7 @@ class UpdateManager(private val context: Context) {
         return 0
     }
 
-    // Clases anidadas con @Keep para evitar ofuscación
+    // Clases para la respuesta JSON
     @Keep
     data class Release(
         @SerializedName("tag_name") val tagName: String?,
@@ -153,6 +184,7 @@ class UpdateManager(private val context: Context) {
 
     data class UpdateInfo(
         val version: String,
-        val downloadUrl: String
+        val downloadUrl: String,
+        val alreadyDownloaded: Boolean = false
     )
 }

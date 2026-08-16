@@ -18,8 +18,10 @@ import cu.christianrvdv.sumador.MainActivity
 import cu.christianrvdv.sumador.R
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.TimeUnit
 
 class DownloadWorker(
     context: Context,
@@ -37,16 +39,46 @@ class DownloadWorker(
                 .putString(KEY_DOWNLOAD_URL, downloadUrl)
                 .putString(KEY_VERSION, version)
                 .build()
+
+            // Configurar reintentos con backoff exponencial
             val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
                 .setInputData(data)
                 .setConstraints(
                     Constraints.Builder()
                         .setRequiredNetworkType(NetworkType.CONNECTED)
+                        .setRequiresStorageNotLow(true)
                         .build()
                 )
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)
                 .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
                 .build()
-            WorkManager.getInstance(context).enqueueUniqueWork(WORK_TAG, ExistingWorkPolicy.REPLACE, workRequest)
+
+            WorkManager.getInstance(context)
+                .enqueueUniqueWork(WORK_TAG, ExistingWorkPolicy.REPLACE, workRequest)
+        }
+
+        // Obtener la ruta del APK para una versión
+        fun getApkFile(context: Context, version: String): File {
+            val updatesDir = File(context.filesDir, "updates")
+            if (!updatesDir.exists()) updatesDir.mkdirs()
+            return File(updatesDir, "sumador_v${version}.apk")
+        }
+
+        private fun getTempFile(context: Context, version: String): File {
+            val updatesDir = File(context.filesDir, "updates")
+            if (!updatesDir.exists()) updatesDir.mkdirs()
+            return File(updatesDir, "sumador_v${version}.apk.tmp")
+        }
+
+        // Verificar si un APK es válido e instalable
+        fun isApkValid(context: Context, apkFile: File): Boolean {
+            return try {
+                val pm = context.packageManager
+                val pkgInfo = pm.getPackageArchiveInfo(apkFile.absolutePath, 0)
+                pkgInfo != null
+            } catch (e: Exception) {
+                false
+            }
         }
     }
 
@@ -55,8 +87,29 @@ class DownloadWorker(
         val version = inputData.getString(KEY_VERSION) ?: return Result.failure()
 
         val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val apkFile = getApkFile(applicationContext, version)
+        val tempFile = getTempFile(applicationContext, version)
 
-        // Verificar permiso de notificaciones (Android 13+)
+        // --- 1. Verificar si ya existe un APK válido ---
+        if (apkFile.exists() && isApkValid(applicationContext, apkFile)) {
+            Log.d("DownloadWorker", "APK válido ya existe, instalando directamente")
+            installApk(apkFile)
+            return Result.success()
+        }
+
+        // --- 2. Si existe pero es inválido, eliminarlo ---
+        if (apkFile.exists()) {
+            apkFile.delete()
+            Log.d("DownloadWorker", "APK corrupto eliminado")
+        }
+
+        // --- 3. Si existe un .tmp de descarga anterior, eliminarlo ---
+        if (tempFile.exists()) {
+            tempFile.delete()
+            Log.d("DownloadWorker", "Archivo temporal antiguo eliminado")
+        }
+
+        // --- 4. Preparar notificación ---
         val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(
                 applicationContext,
@@ -72,59 +125,47 @@ class DownloadWorker(
             null
         }
 
-        // Directorio persistente para APKs
-        val updatesDir = File(applicationContext.filesDir, "updates")
-        if (!updatesDir.exists()) updatesDir.mkdirs()
-
-        val apkFile = File(updatesDir, "sumador_v${version}.apk")
-
-        // Si el APK ya existe, instalar directamente
-        if (apkFile.exists()) {
-            if (builder != null) {
-                builder.setContentText(applicationContext.getString(R.string.update_notification_already_downloaded))
-                    .setProgress(0, 0, false)
-                notificationManager.notify(NOTIFICATION_ID, builder.build())
-            }
-            installApk(apkFile)
-            return Result.success()
-        }
-
-        // Mostrar notificación de progreso
         if (builder != null) {
             builder.setProgress(100, 0, true)
             notificationManager.notify(NOTIFICATION_ID, builder.build())
         }
 
+        // --- 5. Descarga con manejo de errores ---
         return try {
             val url = URL(downloadUrl)
             val connection = url.openConnection() as HttpURLConnection
             connection.requestMethod = "GET"
-            connection.connectTimeout = 15000 // Aumentado
-            connection.readTimeout = 30000 // Aumentado
+            connection.connectTimeout = 15000
+            connection.readTimeout = 30000
             connection.connect()
 
             val contentLength = connection.contentLength.toLong()
+            if (contentLength <= 0) {
+                Log.e("DownloadWorker", "Content-Length no disponible o cero")
+                throw IOException("Invalid content length")
+            }
+
             val inputStream = connection.inputStream
-            val outputStream = FileOutputStream(apkFile)
+            val outputStream = FileOutputStream(tempFile)
 
             val buffer = ByteArray(8192)
             var bytesRead: Int
             var totalBytesRead = 0L
 
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                // *** Verificar si el Worker ha sido detenido ***
+                // Verificar si el worker fue detenido
                 if (isStopped) {
                     Log.d("DownloadWorker", "Worker detenido, cancelando descarga")
                     inputStream.close()
                     outputStream.close()
                     connection.disconnect()
-                    // Eliminar archivo parcial
-                    if (apkFile.exists()) apkFile.delete()
+                    tempFile.delete()
                     return Result.failure()
                 }
 
                 outputStream.write(buffer, 0, bytesRead)
                 totalBytesRead += bytesRead
+
                 if (builder != null && contentLength > 0) {
                     val progress = (totalBytesRead.toFloat() / contentLength.toFloat() * 100).toInt()
                     builder.setProgress(100, progress, false)
@@ -139,23 +180,47 @@ class DownloadWorker(
             inputStream.close()
             connection.disconnect()
 
-            if (apkFile.exists()) {
-                if (builder != null) {
-                    builder.setContentText(applicationContext.getString(R.string.update_notification_completed))
-                        .setProgress(0, 0, false)
-                    notificationManager.notify(NOTIFICATION_ID, builder.build())
-                }
-                installApk(apkFile)
-                Result.success()
-            } else {
-                if (builder != null) {
-                    builder.setContentText(applicationContext.getString(R.string.update_notification_error_file_not_found))
-                        .setProgress(0, 0, false)
-                    notificationManager.notify(NOTIFICATION_ID, builder.build())
-                }
-                Result.failure()
+            // Verificar que el tamaño descargado coincide con Content-Length
+            if (totalBytesRead != contentLength) {
+                Log.e("DownloadWorker", "Tamaño descargado ($totalBytesRead) no coincide con Content-Length ($contentLength)")
+                tempFile.delete()
+                throw IOException("Incomplete download")
             }
+
+            // --- 6. Verificar integridad del APK descargado ---
+            if (!isApkValid(applicationContext, tempFile)) {
+                Log.e("DownloadWorker", "APK descargado no es válido")
+                tempFile.delete()
+                throw IOException("Invalid APK")
+            }
+
+            // --- 7. Renombrar de .tmp a .apk ---
+            if (!tempFile.renameTo(apkFile)) {
+                Log.e("DownloadWorker", "Error al renombrar archivo")
+                tempFile.delete()
+                throw IOException("Rename failed")
+            }
+
+            // --- 8. Notificar completado ---
+            if (builder != null) {
+                builder.setContentText(applicationContext.getString(R.string.update_notification_completed))
+                    .setProgress(0, 0, false)
+                notificationManager.notify(NOTIFICATION_ID, builder.build())
+            }
+
+            // --- 9. Instalar APK ---
+            installApk(apkFile)
+            Result.success()
+
         } catch (e: Exception) {
+            Log.e("DownloadWorker", "Error durante la descarga", e)
+            // Eliminar archivos temporales si existen
+            if (tempFile.exists()) tempFile.delete()
+            if (apkFile.exists() && !isApkValid(applicationContext, apkFile)) {
+                apkFile.delete()
+            }
+
+            // Notificar error
             if (builder != null) {
                 builder.setContentText(
                     applicationContext.getString(R.string.update_notification_error_generic, e.message ?: "")
@@ -163,7 +228,10 @@ class DownloadWorker(
                     .setProgress(0, 0, false)
                 notificationManager.notify(NOTIFICATION_ID, builder.build())
             }
-            Result.failure()
+
+            // Reintentar si es un error recuperable (red, timeout, etc.)
+            // WorkManager reintentará automáticamente según la política de backoff
+            Result.retry()
         }
     }
 
@@ -183,17 +251,17 @@ class DownloadWorker(
     }
 
     private fun installApk(apkFile: File) {
-        // Verificar si podemos solicitar instalación de paquetes (Android O+)
+        // Verificar si podemos solicitar instalación (Android O+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             if (!applicationContext.packageManager.canRequestPackageInstalls()) {
-                // No tenemos permiso, abrir configuración para que el usuario lo habilite
+                // Abrir configuración para habilitar instalación de fuentes desconocidas
                 val intent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                     data = Uri.parse("package:${applicationContext.packageName}")
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
                 applicationContext.startActivity(intent)
 
-                // Mostrar notificación informativa (si hay permiso de notificaciones)
+                // Notificar al usuario
                 val notificationManager = applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
                 val builder = NotificationCompat.Builder(applicationContext, "update_channel")
                     .setContentTitle(applicationContext.getString(R.string.update_notification_install_blocked_title))
@@ -205,7 +273,7 @@ class DownloadWorker(
             }
         }
 
-        // Si tenemos permiso, proceder con la instalación
+        // Instalar APK
         val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             FileProvider.getUriForFile(
                 applicationContext,
