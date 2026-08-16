@@ -200,4 +200,10 @@
     <string name="delete_all_confirmation_message">Esto eliminará permanentemente todas las sumas guardadas. Esta acción no se puede deshacer.</string>
     <string name="delete_confirmation_title">¿Eliminar suma guardada?</string>
     <string name="delete_confirmation_message">¿Estás seguro de que quieres eliminar "%s"?</string>
+
+    <!-- Advertencia al salir sin auto-save -->
+    <string name="unsaved_warning_title">Atención</string>
+    <string name="unsaved_warning_message">El guardado automático está desactivado. La suma actual se perderá si sales. ¿Qué deseas hacer?</string>
+    <string name="unsaved_warning_save_and_exit">Guardar y salir</string>
+    <string name="unsaved_warning_exit_without_saving">Salir sin guardar</string>
 </resources>

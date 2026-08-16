@@ -2,6 +2,7 @@ package cu.christianrvdv.sumador.ui.sumador
 
 import android.content.Context
 import android.content.Intent
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -28,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import cu.christianrvdv.sumador.R
 import cu.christianrvdv.sumador.data.database.CustomDenominationEntity
 import cu.christianrvdv.sumador.ui.settings.*
@@ -38,6 +40,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SumadorScreen(
+    navController: NavController,  // <--- PARÁMETRO AÑADIDO
     modifier: Modifier = Modifier,
     viewModel: SumadorViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel,
@@ -47,7 +50,7 @@ fun SumadorScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val settingsState by settingsViewModel.state.collectAsState()
-    val denominations by viewModel.denominations.collectAsState() // List<CustomDenominationEntity>
+    val denominations by viewModel.denominations.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -57,7 +60,9 @@ fun SumadorScreen(
     var showSaveDialog by remember { mutableStateOf(false) }
     var saveName by remember { mutableStateOf("") }
 
-    // Map para saber si una denominación es moneda o billete (usado en el resumen)
+    var showUnsavedWarning by remember { mutableStateOf(false) }
+    var shouldExitAfterSave by remember { mutableStateOf(false) }
+
     val isCoinMap = remember(denominations) {
         denominations.associate { it.denomination to it.isCoin }
     }
@@ -74,7 +79,18 @@ fun SumadorScreen(
         viewModel.setUseCoins(settingsState.useCoins)
     }
 
-    // Ordenar denominaciones según preferencia
+    // BackHandler usando el navController recibido
+    BackHandler(enabled = true) {
+        val hasBills = state.cantidades.any { (_, value) ->
+            (value.toIntOrNull() ?: 0) > 0
+        }
+        if (!settingsState.autoSave && hasBills) {
+            showUnsavedWarning = true
+        } else {
+            navController.popBackStack()
+        }
+    }
+
     val denominacionesOrdenadas = remember(denominations, settingsState.sortAscending) {
         if (settingsState.sortAscending) {
             denominations.sortedBy { it.denomination }
@@ -358,7 +374,11 @@ fun SumadorScreen(
     // Diálogo de guardado
     if (showSaveDialog) {
         AlertDialog(
-            onDismissRequest = { showSaveDialog = false; saveName = "" },
+            onDismissRequest = {
+                showSaveDialog = false
+                saveName = ""
+                shouldExitAfterSave = false
+            },
             title = { Text(stringResource(R.string.save_sum)) },
             text = {
                 Column(
@@ -412,7 +432,7 @@ fun SumadorScreen(
                             } else {
                                 items.forEach { (denom, cantidadStr) ->
                                     val cantidad = cantidadStr.toIntOrNull() ?: 0
-                                    val isCoin = isCoinMap[denom] ?: (denom % 100 != 0) // fallback a la lógica anterior
+                                    val isCoin = isCoinMap[denom] ?: (denom % 100 != 0)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
@@ -457,12 +477,10 @@ fun SumadorScreen(
                 TextButton(
                     onClick = {
                         val finalName = if (saveName.isNotBlank()) saveName else {
-                            val dateFormat =
-                                SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                            val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
                             dateFormat.format(Date())
                         }
-                        val denominationsMap =
-                            state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
+                        val denominationsMap = state.cantidades.mapValues { it.value.toIntOrNull() ?: 0 }
                         viewModel.saveCurrentSum(
                             name = finalName,
                             total = state.total,
@@ -470,14 +488,61 @@ fun SumadorScreen(
                         )
                         showSaveDialog = false
                         saveName = ""
+                        if (shouldExitAfterSave) {
+                            shouldExitAfterSave = false
+                            navController.popBackStack()
+                        }
                     }
                 ) {
                     Text(stringResource(R.string.save_sum))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showSaveDialog = false; saveName = "" }) {
+                TextButton(
+                    onClick = {
+                        showSaveDialog = false
+                        saveName = ""
+                        shouldExitAfterSave = false
+                    }
+                ) {
                     Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+
+    // Diálogo de advertencia al salir sin auto-save
+    if (showUnsavedWarning) {
+        AlertDialog(
+            onDismissRequest = { showUnsavedWarning = false },
+            title = { Text(stringResource(R.string.unsaved_warning_title)) },
+            text = { Text(stringResource(R.string.unsaved_warning_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showUnsavedWarning = false
+                        shouldExitAfterSave = true
+                        showSaveDialog = true
+                    }
+                ) {
+                    Text(stringResource(R.string.unsaved_warning_save_and_exit))
+                }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(
+                        onClick = {
+                            showUnsavedWarning = false
+                            navController.popBackStack()
+                        }
+                    ) {
+                        Text(stringResource(R.string.unsaved_warning_exit_without_saving))
+                    }
+                    TextButton(
+                        onClick = { showUnsavedWarning = false }
+                    ) {
+                        Text(stringResource(R.string.cancel))
+                    }
                 }
             }
         )
@@ -683,21 +748,12 @@ fun BillInputRow(
 
 // ===================== FUNCIONES AUXILIARES =====================
 
-/**
- * Formatea un monto en centavos a una cadena con separador de decimales.
- * Ej: 1000L -> "10", 1050L -> "10.50"
- */
 fun formatCurrency(amount: Long): String {
     val whole = amount / 100
     val cents = amount % 100
     return if (cents == 0L) whole.toString() else "$whole.${String.format("%02d", cents)}"
 }
 
-/**
- * Formatea una denominación según su tipo (moneda o billete).
- * Moneda -> se muestra con el símbolo ¢ (ej: 25¢)
- * Billete -> se muestra como número entero (ej: 100 -> "1" o "100")
- */
 fun formatDenomination(denom: Int, isCoin: Boolean): String {
     return if (isCoin) {
         "${denom}¢"
@@ -707,10 +763,6 @@ fun formatDenomination(denom: Int, isCoin: Boolean): String {
     }
 }
 
-/**
- * Comparte la suma actual a través de un intent ACTION_SEND.
- * Incluye el detalle de cada denominación usando el tipo para formatear.
- */
 fun shareCurrentSum(
     context: Context,
     state: SumadorState,

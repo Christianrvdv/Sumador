@@ -70,6 +70,7 @@ class MainActivity : ComponentActivity() {
                 PackageManager.PERMISSION_GRANTED -> {
                     // Ya tiene permiso
                 }
+
                 else -> {
                     requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
@@ -124,12 +125,15 @@ class MainActivity : ComponentActivity() {
                             updateInfo = result.info
                             showUpdateDialog = true
                         }
+
                         UpdateManager.UpdateResult.NoUpdate -> {
                             showNoUpdateDialog = true
                         }
+
                         UpdateManager.UpdateResult.NetworkError -> {
                             showNetworkErrorDialog = true
                         }
+
                         is UpdateManager.UpdateResult.Error -> {
                             showUpdateErrorDialog = true
                         }
@@ -148,12 +152,15 @@ class MainActivity : ComponentActivity() {
                             updateInfo = result.info
                             showUpdateDialog = true
                         }
+
                         UpdateManager.UpdateResult.NoUpdate -> {
                             showNoUpdateDialog = true
                         }
+
                         UpdateManager.UpdateResult.NetworkError -> {
                             showNetworkErrorDialog = true
                         }
+
                         is UpdateManager.UpdateResult.Error -> {
                             showUpdateErrorDialog = true
                         }
@@ -187,7 +194,10 @@ class MainActivity : ComponentActivity() {
                                 // Guardar la actualización pendiente en Application
                                 (application as SumadorApplication).pendingUpdate = info
                                 // Iniciar descarga (se pasa la versión para cachear el APK)
-                                updateManager.startBackgroundDownload(info.downloadUrl, info.version)
+                                updateManager.startBackgroundDownload(
+                                    info.downloadUrl,
+                                    info.version
+                                )
                                 showDownloadStartedDialog = true
                             }
                         ) {
@@ -298,6 +308,7 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController, startDestination = "sumador") {
                         composable("sumador") {
                             SumadorScreen(
+                                navController = navController,
                                 settingsViewModel = settingsViewModel,
                                 onNavigateToHistory = { navController.navigate("history") },
                                 onCheckForUpdates = {
@@ -346,11 +357,17 @@ class MainActivity : ComponentActivity() {
             if (permisoConcedido) {
                 val apkFile = File(filesDir, "updates/sumador_v${pending.version}.apk")
                 if (apkFile.exists()) {
-                    Log.d("MainActivity", "APK encontrado en caché, iniciando instalación automática")
+                    Log.d(
+                        "MainActivity",
+                        "APK encontrado en caché, iniciando instalación automática"
+                    )
                     updateManager.startBackgroundDownload(pending.downloadUrl, pending.version)
                     (application as SumadorApplication).pendingUpdate = null
                 } else {
-                    Log.d("MainActivity", "APK no encontrado en caché, no se puede instalar automáticamente")
+                    Log.d(
+                        "MainActivity",
+                        "APK no encontrado en caché, no se puede instalar automáticamente"
+                    )
                 }
             } else {
                 Log.d("MainActivity", "Permiso de instalación no concedido, esperando...")
