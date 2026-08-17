@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.content.ContextCompat
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -79,9 +80,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val context = LocalContext.current
-            val settingsViewModel: SettingsViewModel = viewModel(
-                factory = SettingsViewModel.provideFactory(context)
-            )
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settingsState by settingsViewModel.state.collectAsState()
 
             // Aplicar idioma

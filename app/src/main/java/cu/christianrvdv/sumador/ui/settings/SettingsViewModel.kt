@@ -15,6 +15,7 @@ import cu.christianrvdv.sumador.data.database.SavedSumDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,7 +31,7 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val context: Context,
+    @ApplicationContext private val context: Context,
     private val savedSumDao: SavedSumDao,
     private val customDenominationDao: CustomDenominationDao,
     private val backupManager: BackupManager
