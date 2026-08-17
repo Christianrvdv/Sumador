@@ -1,9 +1,13 @@
 // ui/sumador/SumadorScreen.kt
 package cu.christianrvdv.sumador.ui.sumador
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
@@ -65,9 +69,13 @@ fun SumadorScreen(
     var showUnsavedWarning by remember { mutableStateOf(false) }
     var shouldExitAfterSave by remember { mutableStateOf(false) }
 
-    // === NUEVO: Snackbar para feedback del backup ===
+    // Snackbar para feedback
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
+
+    // Estados para exportación/importación manual
+    var showImportConfirmDialog by remember { mutableStateOf(false) }
+    var importUri by remember { mutableStateOf<Uri?>(null) }
 
     val isCoinMap = remember(denominations) {
         denominations.associate { it.denomination to it.isCoin }
@@ -118,7 +126,35 @@ fun SumadorScreen(
     val isEmpty = state.cantidades.values.all { it.toIntOrNull() == 0 || it.isEmpty() }
     val hasBills = state.cantidades.values.any { it.toIntOrNull() ?: 0 > 0 }
 
-    // === NUEVO: Mostrar Snackbar cuando cambia el mensaje ===
+    // Launchers para exportar e importar
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            uri?.let {
+                coroutineScope.launch {
+                    val exportResult = settingsViewModel.exportDataToUri(context, it)
+                    val messageRes = if (exportResult.isSuccess) R.string.export_success else R.string.export_error
+                    snackbarMessage = context.getString(messageRes)
+                }
+            }
+        }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data?.data
+            uri?.let {
+                importUri = it
+                showImportConfirmDialog = true
+            }
+        }
+    }
+
+    // Mostrar Snackbar cuando cambia el mensaje
     LaunchedEffect(snackbarMessage) {
         snackbarMessage?.let {
             snackbarHostState.showSnackbar(it)
@@ -132,8 +168,10 @@ fun SumadorScreen(
             SnackbarHost(hostState = snackbarHostState) { data ->
                 Snackbar(
                     snackbarData = data,
-                    containerColor = if (data.visuals.message == context.getString(R.string.backup_success))
-                        MaterialTheme.colorScheme.primaryContainer
+                    containerColor = if (data.visuals.message == context.getString(R.string.backup_success) ||
+                        data.visuals.message == context.getString(R.string.export_success) ||
+                        data.visuals.message == context.getString(R.string.import_success)
+                    ) MaterialTheme.colorScheme.primaryContainer
                     else MaterialTheme.colorScheme.errorContainer
                 )
             }
@@ -386,7 +424,9 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogo de confirmación de reinicio
+    // === DIÁLOGOS ===
+
+    // Confirmación de reinicio
     if (showResetDialog) {
         AlertDialog(
             onDismissRequest = { showResetDialog = false },
@@ -405,7 +445,7 @@ fun SumadorScreen(
         )
     }
 
-    // Diálogo de guardado
+    // Guardar suma
     if (showSaveDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -552,7 +592,7 @@ fun SumadorScreen(
         )
     }
 
-    // Diálogo de advertencia al salir sin auto-save
+    // Advertencia al salir sin auto-save
     if (showUnsavedWarning) {
         Dialog(
             onDismissRequest = { showUnsavedWarning = false }
@@ -573,7 +613,6 @@ fun SumadorScreen(
                         .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Título
                     Text(
                         text = stringResource(R.string.unsaved_warning_title),
                         style = MaterialTheme.typography.titleLarge,
@@ -582,7 +621,6 @@ fun SumadorScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    // Mensaje
                     Text(
                         text = stringResource(R.string.unsaved_warning_message),
                         style = MaterialTheme.typography.bodyMedium,
@@ -591,7 +629,6 @@ fun SumadorScreen(
                     )
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    // Botón 1: Salir (destacado)
                     Button(
                         onClick = {
                             showUnsavedWarning = false
@@ -608,7 +645,6 @@ fun SumadorScreen(
                     }
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Botón 2: Cancelar (texto)
                     TextButton(
                         onClick = { showUnsavedWarning = false },
                         modifier = Modifier.fillMaxWidth(),
@@ -673,19 +709,63 @@ fun SumadorScreen(
             onBackupRequest = {
                 coroutineScope.launch {
                     val result = settingsViewModel.requestBackup()
-                    val messageRes = if (result.isSuccess) {
-                        R.string.backup_success
-                    } else {
-                        R.string.backup_error
-                    }
+                    val messageRes = if (result.isSuccess) R.string.backup_success else R.string.backup_error
                     snackbarMessage = context.getString(messageRes)
                 }
+            },
+            onExportRequest = {
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/octet-stream"
+                    putExtra(
+                        Intent.EXTRA_TITLE,
+                        "sumador_backup_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())}.sumadorbak"
+                    )
+                }
+                exportLauncher.launch(intent)
+            },
+            onImportRequest = {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/octet-stream"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("application/octet-stream", "application/json"))
+                }
+                importLauncher.launch(intent)
             }
         )
     }
 
     if (showAboutDialog) {
         AboutBottomSheet(onDismiss = { showAboutDialog = false })
+    }
+
+    // Diálogo de confirmación de importación
+    if (showImportConfirmDialog && importUri != null) {
+        AlertDialog(
+            onDismissRequest = { showImportConfirmDialog = false; importUri = null },
+            title = { Text(stringResource(R.string.import_confirm_title)) },
+            text = { Text(stringResource(R.string.import_confirm_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            val importResult = settingsViewModel.importDataFromUri(context, importUri!!)
+                            val messageRes = if (importResult.isSuccess) R.string.import_success else R.string.import_error
+                            snackbarMessage = context.getString(messageRes)
+                            showImportConfirmDialog = false
+                            importUri = null
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showImportConfirmDialog = false; importUri = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
 

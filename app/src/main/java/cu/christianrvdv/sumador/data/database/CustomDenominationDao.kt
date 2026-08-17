@@ -1,3 +1,4 @@
+// data/database/CustomDenominationDao.kt
 package cu.christianrvdv.sumador.data.database
 
 import androidx.room.Dao
@@ -21,4 +22,14 @@ interface CustomDenominationDao {
 
     @Query("DELETE FROM custom_denominations WHERE currency = :currency")
     suspend fun deleteAllForCurrency(currency: String)
+
+    // === NUEVOS MÉTODOS PARA BACKUP MANUAL ===
+    @Query("SELECT * FROM custom_denominations")
+    fun getAll(): List<CustomDenominationEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(denoms: List<CustomDenominationEntity>)
+
+    @Query("DELETE FROM custom_denominations")
+    suspend fun deleteAll()
 }

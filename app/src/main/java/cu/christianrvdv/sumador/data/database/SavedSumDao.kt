@@ -38,7 +38,6 @@ interface SavedSumDao {
         totalMax: Long? = null
     ): Flow<List<SavedSumEntity>>
 
-    // CORREGIDO: Se añade observedEntities
     @RawQuery(observedEntities = [SavedSumEntity::class])
     fun getFilteredOrdered(query: SupportSQLiteQuery): Flow<List<SavedSumEntity>>
 
@@ -47,4 +46,11 @@ interface SavedSumDao {
 
     @Query("SELECT * FROM saved_sums WHERE id = :id")
     suspend fun getById(id: Long): SavedSumEntity?
+
+    // === NUEVOS MÉTODOS PARA BACKUP MANUAL ===
+    @Query("SELECT * FROM saved_sums")
+    fun getAll(): List<SavedSumEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(sums: List<SavedSumEntity>)
 }

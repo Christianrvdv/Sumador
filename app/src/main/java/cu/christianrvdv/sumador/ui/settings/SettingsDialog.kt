@@ -36,8 +36,9 @@ fun SettingsBottomSheet(
     onAboutClick: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onManageDenominations: () -> Unit,
-    // NUEVO: callback para solicitar backup
-    onBackupRequest: () -> Unit
+    onBackupRequest: () -> Unit,
+    onExportRequest: () -> Unit,   // NUEVO
+    onImportRequest: () -> Unit    // NUEVO
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -191,12 +192,11 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // === NUEVA SECCIÓN: BACKUP EN LA NUBE ===
+            // === SECCIÓN: BACKUP EN LA NUBE ===
             SettingsSection(
                 icon = Icons.Default.CloudUpload,
                 title = stringResource(R.string.backup_section_title)
             ) {
-                // Mostrar fecha del último backup
                 val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
                 val lastBackupText = settingsState.lastBackupTime?.let {
                     dateFormat.format(Date(it))
@@ -209,7 +209,7 @@ fun SettingsBottomSheet(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
-                // Botón para realizar backup manual
+                // Botón Backup now (Auto Backup)
                 Button(
                     onClick = onBackupRequest,
                     modifier = Modifier.fillMaxWidth(),
@@ -228,12 +228,64 @@ fun SettingsBottomSheet(
                     Text(stringResource(R.string.backup_now_button))
                 }
 
-                // Información adicional
                 Text(
                     text = stringResource(R.string.backup_info),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
+
+            // === NUEVA SECCIÓN: BACKUP MANUAL (EXPORT/IMPORT) ===
+            SettingsSection(
+                icon = Icons.Default.Folder,
+                title = stringResource(R.string.manual_backup_title)
+            ) {
+                // Botón Exportar
+                Button(
+                    onClick = onExportRequest,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondary,
+                        contentColor = MaterialTheme.colorScheme.onSecondary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.FileDownload,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.export_backup_button))
+                }
+
+                Spacer(Modifier.height(4.dp))
+
+                // Botón Importar
+                Button(
+                    onClick = onImportRequest,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        contentColor = MaterialTheme.colorScheme.onTertiary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.FileUpload,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.import_backup_button))
+                }
+
+                Text(
+                    text = stringResource(R.string.manual_backup_info),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
                 )
             }
 

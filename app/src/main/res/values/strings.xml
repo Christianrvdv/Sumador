@@ -218,4 +218,16 @@
     <string name="backup_info">Your data is automatically backed up to Google Drive. This action starts a manual backup.</string>
     <string name="backup_success">Backup completed successfully</string>
     <string name="backup_error">Error during backup. Please try again later.</string>
+
+    <!-- Manual Backup (Export/Import) -->
+    <string name="manual_backup_title">Manual backup</string>
+    <string name="export_backup_button">Export backup (encrypted)</string>
+    <string name="import_backup_button">Import backup (encrypted)</string>
+    <string name="manual_backup_info">Export all your data (sums, denominations, settings) to an encrypted file, or import a previously exported file.</string>
+    <string name="export_success">Backup exported successfully</string>
+    <string name="export_error">Error exporting backup</string>
+    <string name="import_success">Backup imported successfully</string>
+    <string name="import_error">Error importing backup</string>
+    <string name="import_confirm_title">Import backup</string>
+    <string name="import_confirm_message">This will overwrite all current data (sums, denominations, settings). Continue?</string>
 </resources>

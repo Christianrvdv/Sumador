@@ -218,4 +218,16 @@
     <string name="backup_info">Tus datos se respaldan automáticamente en Google Drive. Esta acción inicia un backup manual.</string>
     <string name="backup_success">Backup completado correctamente</string>
     <string name="backup_error">Error al realizar el backup. Inténtalo de nuevo más tarde.</string>
+
+    <!-- Backup manual (Exportar/Importar) -->
+    <string name="manual_backup_title">Backup manual</string>
+    <string name="export_backup_button">Exportar backup (cifrado)</string>
+    <string name="import_backup_button">Importar backup (cifrado)</string>
+    <string name="manual_backup_info">Exporta todos tus datos (sumas, denominaciones, ajustes) a un archivo cifrado, o importa un archivo exportado previamente.</string>
+    <string name="export_success">Backup exportado correctamente</string>
+    <string name="export_error">Error al exportar backup</string>
+    <string name="import_success">Backup importado correctamente</string>
+    <string name="import_error">Error al importar backup</string>
+    <string name="import_confirm_title">Importar backup</string>
+    <string name="import_confirm_message">Esto sobrescribirá todos los datos actuales (sumas, denominaciones, ajustes). ¿Continuar?</string>
 </resources>
