@@ -122,17 +122,20 @@ class MainActivity : ComponentActivity() {
                     val result = updateManager.checkForUpdate()
                     when (result) {
                         is UpdateManager.UpdateResult.Success -> {
+                            // Solo mostramos diálogo si hay actualización disponible
                             updateInfo = result.info
                             showUpdateDialog = true
                         }
+                        // Los demás casos son silenciosos al inicio:
                         UpdateManager.UpdateResult.NoUpdate -> {
-                            showNoUpdateDialog = true
+                            // No mostrar nada
+                            Log.d("MainActivity", "Sin actualizaciones (silencioso)")
                         }
                         UpdateManager.UpdateResult.NetworkError -> {
-                            showNetworkErrorDialog = true
+                            Log.d("MainActivity", "Error de red (silencioso)")
                         }
                         is UpdateManager.UpdateResult.Error -> {
-                            showUpdateErrorDialog = true
+                            Log.e("MainActivity", "Error al comprobar actualizaciones (silencioso)", result.throwable)
                         }
                     }
                 }
