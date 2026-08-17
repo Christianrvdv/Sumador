@@ -1,3 +1,4 @@
+// ui/sumador/SumadorScreen.kt
 package cu.christianrvdv.sumador.ui.sumador
 
 import android.content.Context
@@ -41,7 +42,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SumadorScreen(
-    navController: NavController,  // <--- PARÁMETRO AÑADIDO
+    navController: NavController,
     modifier: Modifier = Modifier,
     viewModel: SumadorViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel,
@@ -64,6 +65,10 @@ fun SumadorScreen(
     var showUnsavedWarning by remember { mutableStateOf(false) }
     var shouldExitAfterSave by remember { mutableStateOf(false) }
 
+    // === NUEVO: Snackbar para feedback del backup ===
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+
     val isCoinMap = remember(denominations) {
         denominations.associate { it.denomination to it.isCoin }
     }
@@ -80,7 +85,6 @@ fun SumadorScreen(
         viewModel.setUseCoins(settingsState.useCoins)
     }
 
-    // BackHandler usando el navController recibido
     BackHandler(enabled = true) {
         val hasBills = state.cantidades.any { (_, value) ->
             (value.toIntOrNull() ?: 0) > 0
@@ -114,8 +118,26 @@ fun SumadorScreen(
     val isEmpty = state.cantidades.values.all { it.toIntOrNull() == 0 || it.isEmpty() }
     val hasBills = state.cantidades.values.any { it.toIntOrNull() ?: 0 > 0 }
 
+    // === NUEVO: Mostrar Snackbar cuando cambia el mensaje ===
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            snackbarMessage = null
+        }
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
+        snackbarHost = {
+            SnackbarHost(hostState = snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = if (data.visuals.message == context.getString(R.string.backup_success))
+                        MaterialTheme.colorScheme.primaryContainer
+                    else MaterialTheme.colorScheme.errorContainer
+                )
+            }
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -647,7 +669,18 @@ fun SumadorScreen(
                 showAboutDialog = true
             },
             onCheckForUpdates = onCheckForUpdates,
-            onManageDenominations = onNavigateToManageDenominations
+            onManageDenominations = onNavigateToManageDenominations,
+            onBackupRequest = {
+                coroutineScope.launch {
+                    val result = settingsViewModel.requestBackup()
+                    val messageRes = if (result.isSuccess) {
+                        R.string.backup_success
+                    } else {
+                        R.string.backup_error
+                    }
+                    snackbarMessage = context.getString(messageRes)
+                }
+            }
         )
     }
 

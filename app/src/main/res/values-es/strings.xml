@@ -209,4 +209,13 @@
     <string name="unsaved_warning_exit_without_saving">Salir sin guardar</string>
     <string name="unsaved_warning_message">El guardado automático está desactivado. Si sales ahora, los valores introducidos se perderán. Para conservarlos, activa el guardado automático en los ajustes.</string>
     <string name="unsaved_warning_exit">Salir</string>
+
+    <!-- Backup -->
+    <string name="backup_section_title">Backup en la nube</string>
+    <string name="backup_last_time">Último backup: %s</string>
+    <string name="backup_never">Nunca</string>
+    <string name="backup_now_button">Realizar backup ahora</string>
+    <string name="backup_info">Tus datos se respaldan automáticamente en Google Drive. Esta acción inicia un backup manual.</string>
+    <string name="backup_success">Backup completado correctamente</string>
+    <string name="backup_error">Error al realizar el backup. Inténtalo de nuevo más tarde.</string>
 </resources>

@@ -1,3 +1,4 @@
+// ui/settings/SettingsDialog.kt
 package cu.christianrvdv.sumador.ui.settings
 
 import androidx.compose.foundation.clickable
@@ -16,6 +17,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cu.christianrvdv.sumador.R
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,12 +30,14 @@ fun SettingsBottomSheet(
     onSortChange: (Boolean) -> Unit,
     onAutoSaveChange: (Boolean) -> Unit,
     onConfirmClearChange: (Boolean) -> Unit,
-    onLanguageChange: (LanguageOption) -> Unit, // Callback para idioma
+    onLanguageChange: (LanguageOption) -> Unit,
     onKeepScreenOnChange: (Boolean) -> Unit,
     onUseCoinsChange: (Boolean) -> Unit,
     onAboutClick: () -> Unit,
     onCheckForUpdates: () -> Unit,
-    onManageDenominations: () -> Unit
+    onManageDenominations: () -> Unit,
+    // NUEVO: callback para solicitar backup
+    onBackupRequest: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -101,7 +106,7 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // Sección Denominaciones (nueva)
+            // Sección Denominaciones
             SettingsSection(
                 icon = Icons.Default.Money,
                 title = stringResource(R.string.denominations_section_title)
@@ -113,7 +118,7 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // ⬇️ SECCIÓN IDIOMA (RESTAURADA) ⬇️
+            // Sección Idioma
             SettingsSection(
                 icon = Icons.Default.Language,
                 title = stringResource(R.string.language_label)
@@ -186,6 +191,52 @@ fun SettingsBottomSheet(
                 )
             }
 
+            // === NUEVA SECCIÓN: BACKUP EN LA NUBE ===
+            SettingsSection(
+                icon = Icons.Default.CloudUpload,
+                title = stringResource(R.string.backup_section_title)
+            ) {
+                // Mostrar fecha del último backup
+                val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
+                val lastBackupText = settingsState.lastBackupTime?.let {
+                    dateFormat.format(Date(it))
+                } ?: stringResource(R.string.backup_never)
+
+                Text(
+                    text = stringResource(R.string.backup_last_time, lastBackupText),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                // Botón para realizar backup manual
+                Button(
+                    onClick = onBackupRequest,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.CloudUpload,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.backup_now_button))
+                }
+
+                // Información adicional
+                Text(
+                    text = stringResource(R.string.backup_info),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+            }
+
             // Sección Actualizaciones
             SettingsSection(
                 icon = Icons.Default.SystemUpdate,
@@ -234,6 +285,7 @@ fun SettingsBottomSheet(
     }
 }
 
+// ---- Componentes auxiliares (sin cambios) ----
 @Composable
 private fun SettingsSection(
     icon: ImageVector,

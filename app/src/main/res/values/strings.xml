@@ -209,4 +209,13 @@
     <string name="unsaved_warning_exit_without_saving">Exit without saving</string>
     <string name="unsaved_warning_message">Automatic saving is disabled. If you exit now, the current values will be lost. To keep them, enable auto‑save in Settings.</string>
     <string name="unsaved_warning_exit">Exit</string>
+
+    <!-- Backup -->
+    <string name="backup_section_title">Cloud Backup</string>
+    <string name="backup_last_time">Last backup: %s</string>
+    <string name="backup_never">Never</string>
+    <string name="backup_now_button">Backup now</string>
+    <string name="backup_info">Your data is automatically backed up to Google Drive. This action starts a manual backup.</string>
+    <string name="backup_success">Backup completed successfully</string>
+    <string name="backup_error">Error during backup. Please try again later.</string>
 </resources>

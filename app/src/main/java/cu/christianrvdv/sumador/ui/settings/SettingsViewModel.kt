@@ -1,6 +1,7 @@
 // ui/settings/SettingsViewModel.kt
 package cu.christianrvdv.sumador.ui.settings
 
+import android.app.backup.BackupManager
 import android.content.Context
 import android.util.Log
 import androidx.datastore.preferences.core.*
@@ -16,7 +17,10 @@ import kotlinx.coroutines.launch
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
-class SettingsViewModel(private val context: Context) : ViewModel() {
+class SettingsViewModel(
+    private val context: Context,
+    private val backupManager: BackupManager
+) : ViewModel() {
 
     private object Keys {
         val THEME = stringPreferencesKey("theme")
@@ -51,7 +55,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                         val languageStr = prefs[Keys.LANGUAGE] ?: "SYSTEM"
                         val language = LanguageOption.valueOf(languageStr)
                         val keepScreenOn = prefs[Keys.KEEP_SCREEN_ON] ?: false
-                        val useCoins = prefs[Keys.USE_COINS] ?: false  // NUEVO
+                        val useCoins = prefs[Keys.USE_COINS] ?: false
+
                         _state.value = SettingsState(
                             theme = theme,
                             currencySymbol = currency,
@@ -60,7 +65,8 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
                             confirmClear = confirmClear,
                             language = language,
                             keepScreenOn = keepScreenOn,
-                            useCoins = useCoins
+                            useCoins = useCoins,
+                            lastBackupTime = null // No podemos obtener la fecha real
                         )
                     } catch (e: Exception) {
                         Log.e("SettingsViewModel", "Error parsing settings", e)
@@ -69,6 +75,7 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         }
     }
 
+    // ---- Métodos existentes (actualizaciones de ajustes) ----
     suspend fun updateTheme(theme: ThemeOption) {
         try {
             context.dataStore.edit { prefs ->
@@ -149,12 +156,26 @@ class SettingsViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    companion object {
-        fun provideFactory(context: Context): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return SettingsViewModel(context) as T
-            }
+    // ---- Método para backup ----
+    suspend fun requestBackup(): Result<Unit> {
+        return try {
+            backupManager.dataChanged() // Notifica cambio → programa backup automático
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e("SettingsViewModel", "Error notifying backup", e)
+            Result.failure(e)
         }
+    }
+
+    companion object {
+        fun provideFactory(context: Context): ViewModelProvider.Factory =
+            object : ViewModelProvider.Factory {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    // Usamos el constructor de BackupManager que siempre devuelve una instancia válida
+                    val backupManager = BackupManager(context)
+                    return SettingsViewModel(context, backupManager) as T
+                }
+            }
     }
 }
