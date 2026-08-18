@@ -232,4 +232,8 @@
     <string name="import_confirm_message">This will overwrite all current data (sums, denominations, settings). Continue?</string>
     <string name="import_error_empty">The file is empty</string>
     <string name="import_error_invalid">The file is not a valid backup</string>
+    <string name="backup_auto_info">Android automatically backs up your data periodically when the device is charging and connected to Wi-Fi. You can also manually export your data using the buttons below.</string>
+    <string name="export_error_open">Could not create the backup file</string>
+    <string name="export_error_permission">No permission to save the file</string>
+    <string name="import_error_version">Unsupported backup version</string>
 </resources>

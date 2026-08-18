@@ -138,7 +138,6 @@ fun SumadorScreen(
                     val messageRes = if (exportResult.isSuccess) {
                         R.string.export_success
                     } else {
-                        // Mensaje más específico según el error
                         val exception = exportResult.exceptionOrNull()
                         when {
                             exception?.message?.contains("abrir el archivo") == true -> R.string.export_error_open
@@ -665,7 +664,7 @@ fun SumadorScreen(
         }
     }
 
-    // Diálogo de ajustes
+    // Diálogo de ajustes (con los cambios)
     if (showSettingsDialog) {
         SettingsBottomSheet(
             settingsState = settingsState,
@@ -712,13 +711,7 @@ fun SumadorScreen(
             },
             onCheckForUpdates = onCheckForUpdates,
             onManageDenominations = onNavigateToManageDenominations,
-            onBackupRequest = {
-                coroutineScope.launch {
-                    val result = settingsViewModel.requestBackup()
-                    val messageRes = if (result.isSuccess) R.string.backup_success else R.string.backup_error
-                    snackbarMessage = context.getString(messageRes)
-                }
-            },
+            // onBackupRequest eliminado
             onExportRequest = {
                 val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)

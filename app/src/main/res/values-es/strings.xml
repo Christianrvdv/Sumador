@@ -232,4 +232,8 @@
     <string name="import_confirm_message">Esto sobrescribirá todos los datos actuales (sumas, denominaciones, ajustes). ¿Continuar?</string>
     <string name="import_error_empty">El archivo está vacío</string>
     <string name="import_error_invalid">El archivo no es un backup válido</string>
-</resources>
+    <string name="backup_auto_info">Android realiza copias de seguridad automáticas periódicamente cuando el dispositivo está cargando y conectado a Wi-Fi. También puedes exportar manualmente tus datos con los botones de abajo.</string>
+    <string name="export_error_open">No se pudo crear el archivo de backup</string>
+    <string name="export_error_permission">Sin permisos para guardar el archivo</string>
+    <string name="import_error_version">Versión de backup no soportada</string>
+    </resources>

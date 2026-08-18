@@ -17,8 +17,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cu.christianrvdv.sumador.R
-import java.text.SimpleDateFormat
-import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,9 +34,9 @@ fun SettingsBottomSheet(
     onAboutClick: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onManageDenominations: () -> Unit,
-    onBackupRequest: () -> Unit,
-    onExportRequest: () -> Unit,   // NUEVO
-    onImportRequest: () -> Unit    // NUEVO
+    // onBackupRequest eliminado
+    onExportRequest: () -> Unit,
+    onImportRequest: () -> Unit
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -192,51 +190,20 @@ fun SettingsBottomSheet(
                 )
             }
 
-            // === SECCIÓN: BACKUP EN LA NUBE ===
+            // === SECCIÓN: BACKUP AUTOMÁTICO (INFORMATIVO) ===
             SettingsSection(
                 icon = Icons.Default.CloudUpload,
                 title = stringResource(R.string.backup_section_title)
             ) {
-                val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-                val lastBackupText = settingsState.lastBackupTime?.let {
-                    dateFormat.format(Date(it))
-                } ?: stringResource(R.string.backup_never)
-
                 Text(
-                    text = stringResource(R.string.backup_last_time, lastBackupText),
+                    text = stringResource(R.string.backup_auto_info),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-
-                // Botón Backup now (Auto Backup)
-                Button(
-                    onClick = onBackupRequest,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        Icons.Default.CloudUpload,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.backup_now_button))
-                }
-
-                Text(
-                    text = stringResource(R.string.backup_info),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
             }
 
-            // === NUEVA SECCIÓN: BACKUP MANUAL (EXPORT/IMPORT) ===
+            // === SECCIÓN: BACKUP MANUAL (EXPORT/IMPORT) ===
             SettingsSection(
                 icon = Icons.Default.Folder,
                 title = stringResource(R.string.manual_backup_title)

@@ -21,6 +21,5 @@ data class SettingsState(
     val confirmClear: Boolean = true,
     val language: LanguageOption = LanguageOption.SYSTEM,
     val keepScreenOn: Boolean = false,
-    val useCoins: Boolean = false,
-    val lastBackupTime: Long? = null
+    val useCoins: Boolean = false
 )

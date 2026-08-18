@@ -1,7 +1,6 @@
 // ui/settings/SettingsViewModel.kt
 package cu.christianrvdv.sumador.ui.settings
 
-import android.app.backup.BackupManager
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -35,8 +34,8 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val savedSumDao: SavedSumDao,
-    private val customDenominationDao: CustomDenominationDao,
-    private val backupManager: BackupManager
+    private val customDenominationDao: CustomDenominationDao
+    // Se eliminó BackupManager
 ) : ViewModel() {
 
     // Clave fija de 16 bytes para AES-128 (cambiar en producción)
@@ -85,8 +84,8 @@ class SettingsViewModel @Inject constructor(
                             confirmClear = confirmClear,
                             language = language,
                             keepScreenOn = keepScreenOn,
-                            useCoins = useCoins,
-                            lastBackupTime = null
+                            useCoins = useCoins
+                            // lastBackupTime eliminado
                         )
                     } catch (e: Exception) {
                         Log.e("SettingsViewModel", "Error parsing settings", e)
@@ -176,16 +175,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // ---- Método para backup automático (Google Auto Backup) ----
-    suspend fun requestBackup(): Result<Unit> {
-        return try {
-            backupManager.dataChanged()
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("SettingsViewModel", "Error notifying backup", e)
-            Result.failure(e)
-        }
-    }
+    // ---- Se eliminó el método requestBackup() ----
 
     // ---- Funciones de cifrado/descifrado ----
     private fun encryptData(data: String): ByteArray {
@@ -198,7 +188,6 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun decryptData(encryptedBytes: ByteArray): String {
-        // Validar que haya al menos 16 bytes para el IV
         require(encryptedBytes.size >= 16) { "Datos insuficientes para descifrar" }
         val iv = encryptedBytes.copyOfRange(0, 16)
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
@@ -208,7 +197,7 @@ class SettingsViewModel @Inject constructor(
         return String(decrypted, Charsets.UTF_8)
     }
 
-    // ---- Exportación manual (cifrada) ----
+    // ---- Exportación manual ----
     suspend fun exportDataToUri(context: Context, uri: Uri): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -228,8 +217,7 @@ class SettingsViewModel @Inject constructor(
 
                 context.contentResolver.openOutputStream(uri)?.use { outputStream ->
                     outputStream.write(encryptedBytes)
-                }
-                    ?: return@withContext Result.failure(Exception("No se pudo abrir el archivo para escritura"))
+                } ?: return@withContext Result.failure(Exception("No se pudo abrir el archivo para escritura"))
 
                 Result.success(Unit)
             } catch (e: Exception) {
@@ -239,20 +227,17 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // ---- Importación manual (descifrada) ----
+    // ---- Importación manual ----
     suspend fun importDataFromUri(context: Context, uri: Uri): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
-                val encryptedBytes =
-                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                        inputStream.readBytes()
-                    } ?: return@withContext Result.failure(Exception("No se pudo leer el archivo"))
+                val encryptedBytes = context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                    inputStream.readBytes()
+                } ?: return@withContext Result.failure(Exception("No se pudo leer el archivo"))
 
-                // Validar que el archivo no esté vacío
                 if (encryptedBytes.isEmpty()) {
                     return@withContext Result.failure(Exception("El archivo está vacío"))
                 }
-                // Validar tamaño mínimo (IV + al menos 1 byte de datos)
                 if (encryptedBytes.size < 16) {
                     return@withContext Result.failure(Exception("El archivo no es un backup válido (tamaño insuficiente)"))
                 }
@@ -261,7 +246,6 @@ class SettingsViewModel @Inject constructor(
                 val gson = Gson()
                 val backupData = gson.fromJson(json, BackupData::class.java)
 
-                // Validar versión
                 if (backupData.version != 1) {
                     return@withContext Result.failure(IllegalArgumentException("Versión de backup no soportada"))
                 }
