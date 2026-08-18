@@ -16,11 +16,13 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.security.SecureRandom
 import javax.crypto.Cipher
 import javax.crypto.spec.IvParameterSpec
@@ -196,6 +198,8 @@ class SettingsViewModel @Inject constructor(
     }
 
     private fun decryptData(encryptedBytes: ByteArray): String {
+        // Validar que haya al menos 16 bytes para el IV
+        require(encryptedBytes.size >= 16) { "Datos insuficientes para descifrar" }
         val iv = encryptedBytes.copyOfRange(0, 16)
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
         val key = SecretKeySpec(ENCRYPTION_KEY.toByteArray(Charsets.UTF_8), "AES")
@@ -206,72 +210,87 @@ class SettingsViewModel @Inject constructor(
 
     // ---- Exportación manual (cifrada) ----
     suspend fun exportDataToUri(context: Context, uri: Uri): Result<Unit> {
-        return try {
-            val sums = savedSumDao.getAll()
-            val denominations = customDenominationDao.getAll()
-            val settings = _state.value
-            val backupData = BackupData(
-                version = 1,
-                exportDate = System.currentTimeMillis(),
-                settings = settings,
-                savedSums = sums,
-                customDenominations = denominations
-            )
-            val gson = GsonBuilder().setPrettyPrinting().create()
-            val json = gson.toJson(backupData)
-            val encryptedBytes = encryptData(json)
+        return withContext(Dispatchers.IO) {
+            try {
+                val sums = savedSumDao.getAll()
+                val denominations = customDenominationDao.getAll()
+                val settings = _state.value
+                val backupData = BackupData(
+                    version = 1,
+                    exportDate = System.currentTimeMillis(),
+                    settings = settings,
+                    savedSums = sums,
+                    customDenominations = denominations
+                )
+                val gson = GsonBuilder().setPrettyPrinting().create()
+                val json = gson.toJson(backupData)
+                val encryptedBytes = encryptData(json)
 
-            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
-                outputStream.write(encryptedBytes)
-            } ?: return Result.failure(Exception("Could not open output stream"))
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    outputStream.write(encryptedBytes)
+                }
+                    ?: return@withContext Result.failure(Exception("No se pudo abrir el archivo para escritura"))
 
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("SettingsViewModel", "Error exporting to URI", e)
-            Result.failure(e)
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Error exporting to URI", e)
+                Result.failure(e)
+            }
         }
     }
 
     // ---- Importación manual (descifrada) ----
     suspend fun importDataFromUri(context: Context, uri: Uri): Result<Unit> {
-        return try {
-            val encryptedBytes = context.contentResolver.openInputStream(uri)?.use { inputStream ->
-                inputStream.readBytes()
-            } ?: return Result.failure(Exception("Could not open input stream"))
+        return withContext(Dispatchers.IO) {
+            try {
+                val encryptedBytes =
+                    context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                        inputStream.readBytes()
+                    } ?: return@withContext Result.failure(Exception("No se pudo leer el archivo"))
 
-            val json = decryptData(encryptedBytes)
-            val gson = Gson()
-            val backupData = gson.fromJson(json, BackupData::class.java)
+                // Validar que el archivo no esté vacío
+                if (encryptedBytes.isEmpty()) {
+                    return@withContext Result.failure(Exception("El archivo está vacío"))
+                }
+                // Validar tamaño mínimo (IV + al menos 1 byte de datos)
+                if (encryptedBytes.size < 16) {
+                    return@withContext Result.failure(Exception("El archivo no es un backup válido (tamaño insuficiente)"))
+                }
 
-            // Validar versión
-            if (backupData.version != 1) {
-                return Result.failure(IllegalArgumentException("Unsupported backup version"))
+                val json = decryptData(encryptedBytes)
+                val gson = Gson()
+                val backupData = gson.fromJson(json, BackupData::class.java)
+
+                // Validar versión
+                if (backupData.version != 1) {
+                    return@withContext Result.failure(IllegalArgumentException("Versión de backup no soportada"))
+                }
+
+                // Limpiar y restaurar
+                savedSumDao.deleteAll()
+                customDenominationDao.deleteAll()
+                savedSumDao.insertAll(backupData.savedSums)
+                backupData.customDenominations.forEach { customDenominationDao.insert(it) }
+
+                // Restaurar ajustes
+                context.dataStore.edit { prefs ->
+                    prefs[Keys.THEME] = backupData.settings.theme.name
+                    prefs[Keys.CURRENCY] = backupData.settings.currencySymbol.name
+                    prefs[Keys.SORT_ASC] = backupData.settings.sortAscending
+                    prefs[Keys.AUTO_SAVE] = backupData.settings.autoSave
+                    prefs[Keys.CONFIRM_CLEAR] = backupData.settings.confirmClear
+                    prefs[Keys.LANGUAGE] = backupData.settings.language.name
+                    prefs[Keys.KEEP_SCREEN_ON] = backupData.settings.keepScreenOn
+                    prefs[Keys.USE_COINS] = backupData.settings.useCoins
+                }
+
+                _state.value = backupData.settings
+
+                Result.success(Unit)
+            } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Error importing from URI", e)
+                Result.failure(e)
             }
-
-            // Limpiar y restaurar
-            savedSumDao.deleteAll()
-            customDenominationDao.deleteAll()
-            savedSumDao.insertAll(backupData.savedSums)
-            backupData.customDenominations.forEach { customDenominationDao.insert(it) }
-
-            // Restaurar ajustes
-            context.dataStore.edit { prefs ->
-                prefs[Keys.THEME] = backupData.settings.theme.name
-                prefs[Keys.CURRENCY] = backupData.settings.currencySymbol.name
-                prefs[Keys.SORT_ASC] = backupData.settings.sortAscending
-                prefs[Keys.AUTO_SAVE] = backupData.settings.autoSave
-                prefs[Keys.CONFIRM_CLEAR] = backupData.settings.confirmClear
-                prefs[Keys.LANGUAGE] = backupData.settings.language.name
-                prefs[Keys.KEEP_SCREEN_ON] = backupData.settings.keepScreenOn
-                prefs[Keys.USE_COINS] = backupData.settings.useCoins
-            }
-
-            _state.value = backupData.settings
-
-            Result.success(Unit)
-        } catch (e: Exception) {
-            Log.e("SettingsViewModel", "Error importing from URI", e)
-            Result.failure(e)
         }
     }
 }

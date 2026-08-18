@@ -230,4 +230,6 @@
     <string name="import_error">Error al importar backup</string>
     <string name="import_confirm_title">Importar backup</string>
     <string name="import_confirm_message">Esto sobrescribirá todos los datos actuales (sumas, denominaciones, ajustes). ¿Continuar?</string>
+    <string name="import_error_empty">El archivo está vacío</string>
+    <string name="import_error_invalid">El archivo no es un backup válido</string>
 </resources>

@@ -126,7 +126,7 @@ fun SumadorScreen(
     val isEmpty = state.cantidades.values.all { it.toIntOrNull() == 0 || it.isEmpty() }
     val hasBills = state.cantidades.values.any { it.toIntOrNull() ?: 0 > 0 }
 
-    // Launchers para exportar e importar
+    // ---- Launcher para Exportar ----
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -135,13 +135,24 @@ fun SumadorScreen(
             uri?.let {
                 coroutineScope.launch {
                     val exportResult = settingsViewModel.exportDataToUri(context, it)
-                    val messageRes = if (exportResult.isSuccess) R.string.export_success else R.string.export_error
+                    val messageRes = if (exportResult.isSuccess) {
+                        R.string.export_success
+                    } else {
+                        // Mensaje más específico según el error
+                        val exception = exportResult.exceptionOrNull()
+                        when {
+                            exception?.message?.contains("abrir el archivo") == true -> R.string.export_error_open
+                            exception?.message?.contains("permiso") == true -> R.string.export_error_permission
+                            else -> R.string.export_error
+                        }
+                    }
                     snackbarMessage = context.getString(messageRes)
                 }
             }
         }
     }
 
+    // ---- Launcher para Importar ----
     val importLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -512,12 +523,7 @@ fun SumadorScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
                                         Text(
-                                            text = "${
-                                                formatDenomination(
-                                                    denom,
-                                                    isCoin
-                                                )
-                                            } ${if (!isCoin && denom >= 100) settingsState.currencySymbol.symbol else ""}",
+                                            text = "${formatDenomination(denom, isCoin)} ${if (!isCoin && denom >= 100) settingsState.currencySymbol.symbol else ""}",
                                             style = MaterialTheme.typography.bodyMedium
                                         )
                                         Text(
@@ -739,7 +745,7 @@ fun SumadorScreen(
         AboutBottomSheet(onDismiss = { showAboutDialog = false })
     }
 
-    // Diálogo de confirmación de importación
+    // ---- Diálogo de confirmación de importación (MEJORADO) ----
     if (showImportConfirmDialog && importUri != null) {
         AlertDialog(
             onDismissRequest = { showImportConfirmDialog = false; importUri = null },
@@ -750,7 +756,13 @@ fun SumadorScreen(
                     onClick = {
                         coroutineScope.launch {
                             val importResult = settingsViewModel.importDataFromUri(context, importUri!!)
-                            val messageRes = if (importResult.isSuccess) R.string.import_success else R.string.import_error
+                            val messageRes = when {
+                                importResult.isSuccess -> R.string.import_success
+                                importResult.exceptionOrNull()?.message?.contains("vacío") == true -> R.string.import_error_empty
+                                importResult.exceptionOrNull()?.message?.contains("tamaño insuficiente") == true -> R.string.import_error_invalid
+                                importResult.exceptionOrNull()?.message?.contains("versión") == true -> R.string.import_error_version
+                                else -> R.string.import_error
+                            }
                             snackbarMessage = context.getString(messageRes)
                             showImportConfirmDialog = false
                             importUri = null
@@ -951,12 +963,7 @@ fun shareCurrentSum(
                 val value = denom * count
                 val isCoin = isCoinMap[denom] ?: (denom % 100 != 0)
                 sb.append(
-                    "  ${
-                        formatDenomination(
-                            denom,
-                            isCoin
-                        )
-                    } x $count = ${formatCurrency(value.toLong())}\n"
+                    "  ${formatDenomination(denom, isCoin)} x $count = ${formatCurrency(value.toLong())}\n"
                 )
             }
         }
