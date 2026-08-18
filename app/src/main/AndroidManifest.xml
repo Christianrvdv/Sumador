@@ -40,6 +40,11 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <!-- Receptor para manejar el reintento de instalación desde la notificación -->
+        <receiver
+            android:name=".utils.DownloadWorker$InstallRetryReceiver"
+            android:exported="false" />
+
     </application>
 
 </manifest>

@@ -83,14 +83,11 @@ class UpdateManager(private val context: Context) {
                 }
                 val apkAsset = assets.firstOrNull { it.name.endsWith(".apk") }
                 if (apkAsset != null) {
-                    // --- Limpiar APKs obsoletos de versiones anteriores ---
                     cleanOldApks(latestVersion)
 
-                    // --- Verificar si el APK ya fue descargado y es válido ---
                     val apkFile = DownloadWorker.getApkFile(context, latestVersion)
                     if (apkFile.exists() && DownloadWorker.isApkValid(context, apkFile)) {
-                        Log.d(TAG, "APK para la nueva versión ya existe y es válido, se instalará inmediatamente")
-                        // Instalamos directamente (se hace en el Worker, pero podemos notificar)
+                        Log.d(TAG, "APK para la nueva versión ya existe y es válido")
                         DownloadWorker.start(context, apkAsset.browserDownloadUrl, latestVersion)
                         return@withContext UpdateResult.Success(
                             UpdateInfo(
@@ -100,7 +97,6 @@ class UpdateManager(private val context: Context) {
                             )
                         )
                     } else {
-                        // Si existe pero es inválido, eliminarlo para descargar de nuevo
                         if (apkFile.exists()) apkFile.delete()
                     }
 
@@ -136,7 +132,6 @@ class UpdateManager(private val context: Context) {
         }
     }
 
-    // Limpiar APKs de versiones anteriores (excepto la actual y la nueva)
     private fun cleanOldApks(newVersion: String) {
         val updatesDir = File(context.filesDir, "updates")
         if (!updatesDir.exists()) return
@@ -157,19 +152,34 @@ class UpdateManager(private val context: Context) {
         DownloadWorker.start(context, downloadUrl, version)
     }
 
+    /**
+     * Comparación robusta de versiones que soporta sufijos (ej. 1.8.0-alpha)
+     * Retorna >0 si v1 > v2, <0 si v1 < v2, 0 si igual.
+     */
     private fun compareVersions(v1: String, v2: String): Int {
-        val parts1 = v1.split(".").map { it.toIntOrNull() ?: 0 }
-        val parts2 = v2.split(".").map { it.toIntOrNull() ?: 0 }
-        val maxLen = maxOf(parts1.size, parts2.size)
+        fun normalize(version: String): Pair<List<Int>, String> {
+            val parts = version.split('-')
+            val main = parts[0].split('.').map { it.toIntOrNull() ?: 0 }
+            val suffix = parts.getOrNull(1) ?: ""
+            return Pair(main, suffix)
+        }
+
+        val (main1, suffix1) = normalize(v1)
+        val (main2, suffix2) = normalize(v2)
+
+        val maxLen = maxOf(main1.size, main2.size)
         for (i in 0 until maxLen) {
-            val p1 = if (i < parts1.size) parts1[i] else 0
-            val p2 = if (i < parts2.size) parts2[i] else 0
+            val p1 = if (i < main1.size) main1[i] else 0
+            val p2 = if (i < main2.size) main2[i] else 0
             if (p1 != p2) return p1.compareTo(p2)
         }
-        return 0
+
+        // Sufijo vacío es mayor que cualquier sufijo no vacío
+        if (suffix1.isEmpty() && suffix2.isNotEmpty()) return 1
+        if (suffix1.isNotEmpty() && suffix2.isEmpty()) return -1
+        return suffix1.compareTo(suffix2)
     }
 
-    // Clases para la respuesta JSON
     @Keep
     data class Release(
         @SerializedName("tag_name") val tagName: String?,
