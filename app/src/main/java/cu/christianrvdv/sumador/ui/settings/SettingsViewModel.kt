@@ -1,4 +1,3 @@
-// ui/settings/SettingsViewModel.kt
 package cu.christianrvdv.sumador.ui.settings
 
 import android.content.Context
@@ -8,7 +7,9 @@ import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.withTransaction
 import cu.christianrvdv.sumador.data.BackupData
+import cu.christianrvdv.sumador.data.database.AppDatabase
 import cu.christianrvdv.sumador.data.database.CustomDenominationDao
 import cu.christianrvdv.sumador.data.database.SavedSumDao
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -34,12 +35,11 @@ private val Context.dataStore by preferencesDataStore(name = "settings")
 class SettingsViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val savedSumDao: SavedSumDao,
-    private val customDenominationDao: CustomDenominationDao
-    // Se eliminó BackupManager
+    private val customDenominationDao: CustomDenominationDao,
+    private val database: AppDatabase
 ) : ViewModel() {
 
-    // Clave fija de 16 bytes para AES-128 (cambiar en producción)
-    private val ENCRYPTION_KEY = "SumadorBackupKey"  // 16 caracteres
+    private val ENCRYPTION_KEY = "SumadorBackupKey"
 
     private object Keys {
         val THEME = stringPreferencesKey("theme")
@@ -85,7 +85,6 @@ class SettingsViewModel @Inject constructor(
                             language = language,
                             keepScreenOn = keepScreenOn,
                             useCoins = useCoins
-                            // lastBackupTime eliminado
                         )
                     } catch (e: Exception) {
                         Log.e("SettingsViewModel", "Error parsing settings", e)
@@ -94,7 +93,6 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // ---- Métodos de actualización de ajustes ----
     suspend fun updateTheme(theme: ThemeOption) {
         try {
             context.dataStore.edit { prefs ->
@@ -175,9 +173,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // ---- Se eliminó el método requestBackup() ----
-
-    // ---- Funciones de cifrado/descifrado ----
+    // ---- Cifrado/descifrado ----
     private fun encryptData(data: String): ByteArray {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
         val key = SecretKeySpec(ENCRYPTION_KEY.toByteArray(Charsets.UTF_8), "AES")
@@ -197,7 +193,7 @@ class SettingsViewModel @Inject constructor(
         return String(decrypted, Charsets.UTF_8)
     }
 
-    // ---- Exportación manual ----
+    // ---- Exportación ----
     suspend fun exportDataToUri(context: Context, uri: Uri): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -227,7 +223,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // ---- Importación manual ----
+    // ---- Importación con transacción ----
     suspend fun importDataFromUri(context: Context, uri: Uri): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -250,11 +246,13 @@ class SettingsViewModel @Inject constructor(
                     return@withContext Result.failure(IllegalArgumentException("Versión de backup no soportada"))
                 }
 
-                // Limpiar y restaurar
-                savedSumDao.deleteAll()
-                customDenominationDao.deleteAll()
-                savedSumDao.insertAll(backupData.savedSums)
-                backupData.customDenominations.forEach { customDenominationDao.insert(it) }
+                // Usar withTransaction para operación atómica (suspendida)
+                database.withTransaction {
+                    savedSumDao.deleteAll()
+                    customDenominationDao.deleteAll()
+                    savedSumDao.insertAll(backupData.savedSums)
+                    backupData.customDenominations.forEach { customDenominationDao.insert(it) }
+                }
 
                 // Restaurar ajustes
                 context.dataStore.edit { prefs ->

@@ -17,7 +17,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import java.util.Date
 import javax.inject.Inject
 
 private val Context.sumadorDataStore by preferencesDataStore(name = "sumador_state")
@@ -29,21 +28,16 @@ class SumadorViewModel @Inject constructor(
     private val customDenominationDao: CustomDenominationDao
 ) : ViewModel() {
 
-    // Flujos para moneda y uso de monedas
     private val _currencyFlow = MutableStateFlow(CurrencySymbol.PESO)
     private val _useCoinsFlow = MutableStateFlow(false)
 
-    // Estado mutable de cantidades (Map<Denominacion, String>)
     private val _cantidades = mutableStateMapOf<Int, String>()
 
-    // Estado total y cantidades expuesto
     private val _state = MutableStateFlow(SumadorState(cantidades = emptyMap(), total = 0L))
     val state: StateFlow<SumadorState> = _state.asStateFlow()
 
-    // Flag para auto-save
     private var autoSaveEnabled = true
 
-    // Flujo de denominaciones (combina custom + default) con tipo (isCoin)
     val denominations: StateFlow<List<CustomDenominationEntity>> = combine(
         _currencyFlow,
         _useCoinsFlow
@@ -65,7 +59,6 @@ class SumadorViewModel @Inject constructor(
         )
 
     init {
-        // Observar cambios en denominaciones y actualizar cantidades
         viewModelScope.launch {
             denominations.collect { denomList ->
                 val currentMap = _cantidades.toMap()
@@ -80,24 +73,15 @@ class SumadorViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Cambia la moneda actual.
-     * Esto dispara la actualización de las denominaciones y la recarga de cantidades.
-     */
     fun setCurrency(currency: CurrencySymbol) {
         if (_currencyFlow.value != currency) {
             _currencyFlow.value = currency
             cargarCantidadesDesdeDataStore(currency, _useCoinsFlow.value)
         } else {
-            // Forzar recarga por si cambiaron denominaciones custom
             cargarCantidadesDesdeDataStore(currency, _useCoinsFlow.value)
         }
     }
 
-    /**
-     * Cambia si se usan monedas.
-     * Esto también actualiza las denominaciones y recarga cantidades.
-     */
     fun setUseCoins(enabled: Boolean) {
         if (_useCoinsFlow.value != enabled) {
             _useCoinsFlow.value = enabled
@@ -109,10 +93,6 @@ class SumadorViewModel @Inject constructor(
         autoSaveEnabled = enabled
     }
 
-    /**
-     * Actualiza la cantidad de una denominación específica.
-     * Si autoSave está activo, persiste el valor en DataStore.
-     */
     fun updateCantidad(denominacion: Int, valor: String) {
         _cantidades[denominacion] = valor
         calcularTotal()
@@ -134,14 +114,10 @@ class SumadorViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Carga las cantidades guardadas en DataStore para las denominaciones actuales.
-     */
     private fun cargarCantidadesDesdeDataStore(currency: CurrencySymbol, useCoins: Boolean) {
         viewModelScope.launch {
             try {
                 val prefs = context.sumadorDataStore.data.first()
-                // Usar denominations.value que ya está actualizado gracias al flujo reactivo
                 val currentDenoms = denominations.value.map { it.denomination }
                 currentDenoms.forEach { denom ->
                     val key = stringPreferencesKey("${currency.name}_$denom")
@@ -155,9 +131,6 @@ class SumadorViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Recalcula el total sumando (denominación * cantidad) para todas las denominaciones.
-     */
     private fun calcularTotal() {
         val total = _cantidades.entries.sumOf { (denom, value) ->
             val cantidad = value.toIntOrNull() ?: 0
@@ -168,9 +141,6 @@ class SumadorViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Reinicia todas las cantidades a 0 y guarda el estado si autoSave está activo.
-     */
     fun resetear() {
         val denoms = denominations.value.map { it.denomination }
         denoms.forEach { _cantidades[it] = "" }
@@ -196,15 +166,12 @@ class SumadorViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Guarda la suma actual en la base de datos (historial).
-     */
     fun saveCurrentSum(name: String, total: Long, denominationsMap: Map<Int, Int>) {
         viewModelScope.launch {
             try {
                 val entity = SavedSumEntity(
                     name = name,
-                    timestamp = Date(),
+                    timestamp = System.currentTimeMillis(),
                     total = total,
                     denominationsMap = Converters().fromMapToString(denominationsMap)
                 )
@@ -215,9 +182,6 @@ class SumadorViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Denominaciones predeterminadas con tipo (isCoin) para cada moneda.
-     */
     private fun getDefaultDenominationsWithType(currency: CurrencySymbol, useCoins: Boolean): List<CustomDenominationEntity> {
         return when (currency) {
             CurrencySymbol.PESO -> {

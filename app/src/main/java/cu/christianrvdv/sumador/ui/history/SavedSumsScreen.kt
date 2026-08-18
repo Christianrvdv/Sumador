@@ -44,14 +44,13 @@ fun SavedSumsScreen(
     val savedSums by viewModel.allSavedSums.collectAsState(initial = emptyList())
     val filterState by viewModel.filterState.collectAsState()
     var selectedSum by remember { mutableStateOf<SavedSumEntity?>(null) }
-    var sumToDelete by remember { mutableStateOf<SavedSumEntity?>(null) } // para confirmación individual
+    var sumToDelete by remember { mutableStateOf<SavedSumEntity?>(null) }
     var showDeleteAllDialog by remember { mutableStateOf(false) }
 
     var searchText by remember { mutableStateOf("") }
     var showFilterDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
-    // Estados locales para el diálogo de filtros
     var localDateFrom by remember { mutableStateOf<Long?>(null) }
     var localDateTo by remember { mutableStateOf<Long?>(null) }
     var localTotalMinStr by remember { mutableStateOf<String?>(null) }
@@ -116,7 +115,6 @@ fun SavedSumsScreen(
                     }
                 },
                 actions = {
-                    // Botón Eliminar todo
                     IconButton(onClick = { showDeleteAllDialog = true }) {
                         Icon(Icons.Default.DeleteSweep, contentDescription = stringResource(R.string.delete_all))
                     }
@@ -187,7 +185,7 @@ fun SavedSumsScreen(
                         SavedSumItem(
                             sum = sum,
                             onItemClick = { selectedSum = sum },
-                            onDelete = { sumToDelete = sum }, // abrir confirmación
+                            onDelete = { sumToDelete = sum },
                             onShare = { shareSum(context, sum) }
                         )
                     }
@@ -196,7 +194,6 @@ fun SavedSumsScreen(
         }
     }
 
-    // Diálogo de confirmación para eliminar individual
     if (sumToDelete != null) {
         AlertDialog(
             onDismissRequest = { sumToDelete = null },
@@ -220,7 +217,6 @@ fun SavedSumsScreen(
         )
     }
 
-    // Diálogo de confirmación para eliminar todo
     if (showDeleteAllDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteAllDialog = false },
@@ -244,7 +240,6 @@ fun SavedSumsScreen(
         )
     }
 
-    // Diálogo de filtros (con opciones de orden)
     if (showFilterDialog) {
         FilterDialog(
             dateFrom = localDateFrom,
@@ -294,7 +289,6 @@ fun SavedSumsScreen(
         )
     }
 
-    // Bottom sheet de detalle
     selectedSum?.let { sum ->
         SavedSumDetailBottomSheet(
             savedSum = sum,
@@ -307,7 +301,7 @@ fun SavedSumsScreen(
     }
 }
 
-// -------- DIÁLOGO DE FILTROS CON ORDEN --------
+// -------- DIÁLOGO DE FILTROS --------
 @Composable
 private fun FilterDialog(
     dateFrom: Long?,
@@ -345,7 +339,6 @@ private fun FilterDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Encabezado
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -369,7 +362,6 @@ private fun FilterDialog(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Rango de fechas
                 Text(
                     text = stringResource(R.string.date_range_section),
                     style = MaterialTheme.typography.labelLarge,
@@ -395,7 +387,6 @@ private fun FilterDialog(
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // Rango de montos
                 Text(
                     text = stringResource(R.string.amount_range_section),
                     style = MaterialTheme.typography.labelLarge,
@@ -425,14 +416,12 @@ private fun FilterDialog(
                 )
                 Spacer(Modifier.height(8.dp))
 
-                // --- ORDEN ---
                 Text(
                     text = stringResource(R.string.order_by_label),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
-                // Campo de orden
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -453,7 +442,6 @@ private fun FilterDialog(
                         }
                     }
                 }
-                // Dirección del orden
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
@@ -477,7 +465,6 @@ private fun FilterDialog(
 
                 Spacer(Modifier.height(16.dp))
 
-                // Botones de acción
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -652,7 +639,7 @@ fun shareSum(context: android.content.Context, sum: SavedSumEntity) {
     val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
     val sb = StringBuilder()
     sb.append("📊 ${sum.name}\n")
-    sb.append("📅 ${dateFormat.format(sum.timestamp)}\n")
+    sb.append("📅 ${dateFormat.format(Date(sum.timestamp))}\n") // Cambiado: Date(sum.timestamp)
     sb.append("💰 ${context.getString(R.string.total_label, formatCurrency(sum.total))}\n\n")
     sb.append("${context.getString(R.string.detail_label)}:\n")
     denominations.entries.sortedByDescending { it.key }.forEach { (denom, count) ->
@@ -701,7 +688,7 @@ fun SavedSumItem(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = dateFormat.format(sum.timestamp),
+                    text = dateFormat.format(Date(sum.timestamp)), // Cambiado: Date(sum.timestamp)
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -771,7 +758,7 @@ fun SavedSumDetailBottomSheet(
                         .padding(12.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.date_label, dateFormat.format(savedSum.timestamp)),
+                        text = stringResource(R.string.date_label, dateFormat.format(Date(savedSum.timestamp))), // Cambiado
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

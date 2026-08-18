@@ -4,7 +4,6 @@ package cu.christianrvdv.sumador.data.database
 import androidx.room.TypeConverter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import java.util.Date
 
 class Converters {
     @TypeConverter
@@ -18,10 +17,4 @@ class Converters {
         val type = object : TypeToken<Map<Int, Int>>() {}.type
         return Gson().fromJson(string, type) ?: emptyMap()
     }
-
-    @TypeConverter
-    fun fromDate(date: Date): Long = date.time
-
-    @TypeConverter
-    fun toDate(timestamp: Long): Date = Date(timestamp)
 }
