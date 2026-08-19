@@ -15,6 +15,7 @@ import cu.christianrvdv.sumador.data.database.SavedSumDao
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.reflect.TypeToken
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -223,7 +224,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    // ---- Importación con transacción ----
+    // ---- Importación con transacción y TypeToken ----
     suspend fun importDataFromUri(context: Context, uri: Uri): Result<Unit> {
         return withContext(Dispatchers.IO) {
             try {
@@ -240,7 +241,9 @@ class SettingsViewModel @Inject constructor(
 
                 val json = decryptData(encryptedBytes)
                 val gson = Gson()
-                val backupData = gson.fromJson(json, BackupData::class.java)
+                // Usamos TypeToken para manejar correctamente los tipos genéricos
+                val type = object : TypeToken<BackupData>() {}.type
+                val backupData: BackupData = gson.fromJson(json, type)
 
                 if (backupData.version != 1) {
                     return@withContext Result.failure(IllegalArgumentException("Versión de backup no soportada"))

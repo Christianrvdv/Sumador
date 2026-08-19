@@ -1,21 +1,19 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
-#
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Mantener todas las clases anotadas con @Keep
+-keep @androidx.annotation.Keep class *
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Mantener clases específicas de backup (opcional, ya que @Keep las cubre)
+-keep class cu.christianrvdv.sumador.data.BackupData { *; }
+-keep class cu.christianrvdv.sumador.ui.settings.SettingsState { *; }
+-keep class cu.christianrvdv.sumador.ui.settings.ThemeOption { *; }
+-keep class cu.christianrvdv.sumador.ui.settings.CurrencySymbol { *; }
+-keep class cu.christianrvdv.sumador.ui.settings.LanguageOption { *; }
+-keep class cu.christianrvdv.sumador.data.database.SavedSumEntity { *; }
+-keep class cu.christianrvdv.sumador.data.database.CustomDenominationEntity { *; }
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
-
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# Mantener constructores de data classes para Gson
+-keepclassmembers class cu.christianrvdv.sumador.data.** {
+    <init>(...);
+}
+-keepclassmembers class cu.christianrvdv.sumador.ui.settings.** {
+    <init>(...);
+}

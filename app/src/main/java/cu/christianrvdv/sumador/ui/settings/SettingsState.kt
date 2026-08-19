@@ -1,25 +1,37 @@
-// ui/settings/SettingsState.kt
 package cu.christianrvdv.sumador.ui.settings
 
+import androidx.annotation.Keep
+import com.google.gson.annotations.SerializedName
+
+@Keep
 enum class ThemeOption {
-    LIGHT, DARK, SYSTEM
+    @SerializedName("LIGHT") LIGHT,
+    @SerializedName("DARK") DARK,
+    @SerializedName("SYSTEM") SYSTEM
 }
 
+@Keep
 enum class CurrencySymbol(val symbol: String) {
-    PESO("$"),
-    USD("USD"),
-    EURO("€")
+    @SerializedName("PESO") PESO("$"),
+    @SerializedName("USD") USD("USD"),
+    @SerializedName("EURO") EURO("€")
 }
 
-enum class LanguageOption { ENGLISH, SPANISH, SYSTEM }
+@Keep
+enum class LanguageOption {
+    @SerializedName("ENGLISH") ENGLISH,
+    @SerializedName("SPANISH") SPANISH,
+    @SerializedName("SYSTEM") SYSTEM
+}
 
+@Keep
 data class SettingsState(
-    val theme: ThemeOption = ThemeOption.SYSTEM,
-    val currencySymbol: CurrencySymbol = CurrencySymbol.PESO,
-    val sortAscending: Boolean = true,
-    val autoSave: Boolean = true,
-    val confirmClear: Boolean = true,
-    val language: LanguageOption = LanguageOption.SYSTEM,
-    val keepScreenOn: Boolean = false,
-    val useCoins: Boolean = false
+    @SerializedName("theme") val theme: ThemeOption = ThemeOption.SYSTEM,
+    @SerializedName("currencySymbol") val currencySymbol: CurrencySymbol = CurrencySymbol.PESO,
+    @SerializedName("sortAscending") val sortAscending: Boolean = true,
+    @SerializedName("autoSave") val autoSave: Boolean = true,
+    @SerializedName("confirmClear") val confirmClear: Boolean = true,
+    @SerializedName("language") val language: LanguageOption = LanguageOption.SYSTEM,
+    @SerializedName("keepScreenOn") val keepScreenOn: Boolean = false,
+    @SerializedName("useCoins") val useCoins: Boolean = false
 )

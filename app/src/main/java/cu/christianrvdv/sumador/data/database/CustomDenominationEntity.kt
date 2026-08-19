@@ -1,13 +1,16 @@
 package cu.christianrvdv.sumador.data.database
 
+import androidx.annotation.Keep
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.google.gson.annotations.SerializedName
 
 @Entity(tableName = "custom_denominations")
+@Keep
 data class CustomDenominationEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
-    val currency: String, // "PESO", "USD", "EURO"
-    val denomination: Int, // valor en centavos
-    val isCoin: Boolean = false // true = moneda, false = billete
+    @SerializedName("id") val id: Long = 0,
+    @SerializedName("currency") val currency: String,
+    @SerializedName("denomination") val denomination: Int,
+    @SerializedName("isCoin") val isCoin: Boolean = false
 )
