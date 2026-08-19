@@ -1,116 +1,121 @@
-# Sumador – Count bills and coins quickly
+# Sumador – Cuenta billetes y monedas rápidamente
 
-[![Version](https://img.shields.io/badge/version-1.4.0-blue.svg)](https://github.com/Christianrvdv/Sumador/releases/tag/v1.4.0)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Versión](https://img.shields.io/badge/version-1.8.1-blue.svg)](https://github.com/Christianrvdv/Sumador/releases/tag/v1.8.1)
+[![Licencia: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![Android](https://img.shields.io/badge/Android-8.0%2B-brightgreen)](https://developer.android.com)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9-purple)](https://kotlinlang.org)
+[![Material 3](https://img.shields.io/badge/Material-3-757575)](https://m3.material.io)
 
-**Sumador** is a simple and intuitive Android app for counting bills and coins.  
-It is designed for merchants, cashiers, and anyone who handles cash – helping you keep track of totals quickly and accurately.
+**Sumador** es una aplicación para Android sencilla e intuitiva para contar billetes y monedas.
+Está diseñada para comerciantes, cajeros y cualquier persona que maneje efectivo, ayudándote a llevar el control de los totales de forma rápida y precisa.
 
-> ✨ **New in v1.4.0:** Custom denomination management – add, edit, or delete your own bill/coin values per currency. Also improved coin support and database migration.
+> ✨ **Última actualización (v1.8.1):** **Copia de seguridad y restauración manual** completa (cifrada), filtros avanzados en el historial, denominaciones personalizadas por moneda, soporte mejorado para monedas y muchas mejoras en la experiencia de usuario.
 
 ---
 
-## 🚀 Features
+## 🚀 Características
 
-| Feature | Description |
+| Característica | Descripción |
 |---------|-------------|
-| 💱 **Multiple currencies** | Cuban Peso ($), US Dollar (USD), Euro (€) |
-| 🪙 **Coin & bill support** | Differentiate between coins and bills – each denomination can be marked as coin or bill |
-| 🛠️ **Custom denominations** | Add, edit, or delete denominations for each currency independently – the app will remember your custom list |
-| 🔢 **Sort order** | Ascending or descending order of denominations (applies to both bills and coins) |
-| 💾 **Auto‑save** | Amounts are automatically saved and restored on app restart (per currency) |
-| 🌗 **Themes** | Light, dark, and system default (with dynamic colour support on Android 12+) |
-| 🌐 **Languages** | English and Spanish (system default also supported) |
-| 📜 **History** | All saved sums with **search by name** and **advanced filters** (date range, amount range) |
-| 📤 **Share** | Share sums with others via any app (WhatsApp, email, etc.) – includes detailed breakdown |
-| 📱 **Keep screen on** | Prevents screen from turning off while using the app |
-| 🧹 **Clear confirmation** | Optional confirmation before clearing all amounts |
-| 🔄 **Update checker** | Built‑in update checker that downloads and installs new versions from GitHub releases |
+| 💱 **Múltiples monedas** | Peso cubano ($), Dólar estadounidense (USD), Euro (€) – cambia al instante |
+| 🪙 **Soporte para monedas y billetes** | Cada denominación se puede marcar como moneda o billete; se muestran con diferente formato |
+| 🛠️ **Denominaciones personalizadas** | Añade, edita o elimina denominaciones **por moneda** – la app guarda tus listas personalizadas en Room |
+| 🗂️ **Historial con filtros avanzados** | Busca por nombre, filtra por rango de fechas, rango de cantidades y ordena por fecha o nombre (ascendente/descendente) |
+| 🔢 **Orden de las denominaciones** | Las denominaciones se pueden ordenar de forma ascendente o descendente (aplica tanto a billetes como a monedas) |
+| 💾 **Auto‑guardado** | Las cantidades se guardan y restauran automáticamente al reiniciar la app **por moneda** (mediante DataStore) |
+| 🌗 **Temas** | Claro, oscuro y predeterminado del sistema (con **color dinámico** en Android 12+) |
+| 🌐 **Idiomas** | Inglés, español y el del sistema – cambia sin necesidad de reiniciar (la actividad se recrea) |
+| 📤 **Compartir** | Comparte el total actual o cualquier suma guardada como un desglose detallado en texto |
+| 📱 **Mantener pantalla activa** | Opción para evitar que la pantalla se apague mientras usas la app |
+| 🧹 **Confirmación al limpiar** | Confirmación opcional antes de borrar todas las cantidades |
+| 🔄 **Buscador de actualizaciones** | Buscador integrado que descarga nuevos APKs desde las versiones de GitHub usando WorkManager |
+| 💾 **Copia de seguridad y restauración manual** | Exporta/importa todos los datos (ajustes, sumas guardadas, denominaciones personalizadas) mediante archivos **cifrados** `.sumadorbak` (AES‑CBC) |
+| 🔒 **Seguridad de datos** | Los archivos de respaldo están cifrados con una clave fija para evitar manipulaciones |
+| 📱 **Android 8.0+** | SDK mínimo 26 (Oreo) |
 
 ---
 
-## 🛠️ Technologies
+## 🛠️ Tecnologías
 
 - **Kotlin** – 100% Kotlin
-- **Jetpack Compose** – Modern UI toolkit
-- **Material 3** – Latest Material Design
-- **Room** – Local database for saved sums and custom denominations
-- **DataStore** – Persistent storage for user settings and auto‑saved amounts
-- **Hilt** – Dependency injection
-- **Coroutines & Flow** – Asynchronous operations and reactive UI
-- **WorkManager** – Background download of updates
-- **OkHttp & Gson** – Network requests and JSON parsing for GitHub releases
+- **Jetpack Compose** – Kit de herramientas moderno para la interfaz de usuario
+- **Material 3** – Último diseño Material con color dinámico
+- **Room** – Base de datos local para sumas guardadas y denominaciones personalizadas (migración incluida a la versión 3)
+- **DataStore** – Almacenamiento persistente para ajustes de usuario y cantidades auto‑guardadas
+- **Hilt** – Inyección de dependencias
+- **Coroutines & Flow** – Operaciones asíncronas e interfaz de usuario reactiva
+- **WorkManager** – Descarga en segundo plano de actualizaciones (exenta de optimizaciones de batería)
+- **OkHttp & Gson** – Solicitudes de red y análisis JSON para las versiones de GitHub
+- **Cifrado AES‑CBC** – Utilizado para los archivos de copia de seguridad y restauración
 
 ---
 
-## 📥 Installation & Build
+## 📥 Instalación y compilación
 
-### Prerequisites
-- Android Studio Iguana or newer
+### Requisitos previos
+- Android Studio Iguana o superior
 - JDK 17
-- Android SDK (minimum API 26)
+- SDK de Android (API mínima 26)
 
-### Clone the repository
+### Clonar el repositorio
 ```bash
 git clone https://github.com/Christianrvdv/Sumador.git
 cd Sumador
 ```
 
-### Build and run
-1. Open the project in Android Studio.
-2. Wait for Gradle sync to finish.
-3. Connect an Android device or start an emulator.
-4. Click **Run** (▶) or use the Gradle task:
+### Compilar y ejecutar
+1. Abre el proyecto en Android Studio.
+2. Espera a que finalice la sincronización de Gradle.
+3. Conecta un dispositivo Android o inicia un emulador.
+4. Haz clic en **Ejecutar** (▶) o usa la tarea de Gradle:
 
 ```bash
 ./gradlew installDebug
- ```
+```
 
-### Generate a signed APK / AAB
-
+### Generar un APK / AAB firmado
 ```bash
 ./gradlew assembleRelease
 ```
-The output will be in `app/build/outputs/apk/release/`.
+La salida estará en `app/build/outputs/apk/release/`.
 
 ---
 
-## 🎮 Usage
+## 🎮 Uso
 
-1. **Counting** – Tap the **+** button next to each denomination to add bills/coins, or use the **-** button to remove.
-2. **Total** – The total amount is updated in real time at the bottom.
-3. **Clear** – Tap the trash icon to reset all counts (with confirmation if enabled).
-4. **Save** – Save the current sum to history with a custom name.
-5. **Share** – Share the current sum or any saved sum as text.
-6. **History** – View, search, filter, edit or delete saved sums.
-7. **Settings** – Access themes, currencies, language, sort order, auto‑save, confirmation, keep screen on, coin toggle, and update checker.
-8. **Manage denominations** – From Settings, tap “Manage denominations” to add, edit, or remove bill/coin values for the currently selected currency. Changes are saved per currency.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have an idea, find a bug, or want to improve the code:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/your-feature`).
-3. Commit your changes (`git commit -m 'Add some feature'`).
-4. Push to the branch (`git push origin feature/your-feature`).
-5. Open a Pull Request.
-
-Please ensure your code follows the project style and includes appropriate tests.
+1. **Contar** – Pulsa el botón **+** junto a cada denominación para añadir billetes o monedas, o usa el botón **−** para eliminar.
+2. **Total** – El total se actualiza en tiempo real en la parte inferior.
+3. **Limpiar** – Pulsa el icono de la papelera para reiniciar todos los conteos (con confirmación si está activada).
+4. **Guardar** – Guarda la suma actual en el historial con un nombre personalizado.
+5. **Compartir** – Comparte la suma actual o cualquier suma guardada como texto.
+6. **Historial** – Visualiza, busca, filtra (por fecha/cantidad), ordena, edita o elimina sumas guardadas.
+7. **Ajustes** – Accede a temas, monedas, idioma, orden de las denominaciones, auto‑guardado, confirmación, mantener pantalla activa, activar monedas, buscador de actualizaciones y **copia de seguridad/restauración manual**.
+8. **Gestionar denominaciones** – Desde Ajustes, pulsa “Gestionar denominaciones” para añadir, editar o eliminar valores de billetes y monedas para la moneda seleccionada. Los cambios se guardan por moneda.
+9. **Copia de seguridad** – Usa los botones **Exportar** / **Importar** en Ajustes para crear o restaurar una copia de seguridad cifrada de todos tus datos (ajustes, historial, denominaciones personalizadas). Los archivos de respaldo tienen la extensión `.sumadorbak`.
 
 ---
 
-## 📄 License
+## 🤝 Contribuciones
 
-This project is licensed under the **GNU General Public License v3.0** – see the [LICENSE](LICENSE) file for details.
+¡Las contribuciones son bienvenidas! Si tienes una idea, encuentras un error o quieres mejorar el código:
+
+1. Haz un fork del repositorio.
+2. Crea una nueva rama (`git checkout -b feature/tu-caracteristica`).
+3. Confirma tus cambios (`git commit -m 'Añadir alguna característica'`).
+4. Sube la rama (`git push origin feature/tu-caracteristica`).
+5. Abre una solicitud de extracción (Pull Request).
+
+Asegúrate de que tu código siga el estilo del proyecto e incluya las pruebas adecuadas.
 
 ---
 
-## 👨‍💻 Author
+## 📄 Licencia
+
+Este proyecto está licenciado bajo la **GNU General Public License v3.0** – consulta el archivo [LICENSE](LICENSE) para más detalles.
+
+---
+
+## 👨‍💻 Autor
 
 **Christian R Vazquez**
 - [GitHub](https://github.com/Christianrvdv)
@@ -118,16 +123,16 @@ This project is licensed under the **GNU General Public License v3.0** – see t
 
 ---
 
-## ⭐ Support
+## ⭐ Apoyo
 
-If you find this app useful, please consider giving it a star ⭐ on GitHub to show your support.
-
----
-
-## 📦 Download
-
-You can download the latest APK from the [Releases](https://github.com/Christianrvdv/Sumador/releases) page or get it from the Google Play Store (if available).
+Si encuentras útil esta aplicación, considera darle una estrella ⭐ en GitHub para mostrar tu apoyo.
 
 ---
 
-*Built with ❤️ in Cuba.*
+## 📦 Descarga
+
+Puedes descargar el último APK desde la página de [Versiones](https://github.com/Christianrvdv/Sumador/releases).
+
+---
+
+*Hecho con ❤️ en Cuba.*
